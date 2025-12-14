@@ -11,7 +11,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: 🐞 Description
+      label: 🐞 버그 설명
       description: 발생한 버그에 대해 간략하게 설명해주세요.
       placeholder: 로그인 화면에서 버튼이 눌리지 않습니다.
     validations:
@@ -20,7 +20,7 @@ body:
   - type: checkboxes
     id: modules
     attributes:
-      label: 🚨 Affected Modules
+      label: 📝 버그 발생 모듈
       description: 버그가 발생한 모듈을 선택해주세요.
       options:
         - label: Shared
@@ -34,7 +34,7 @@ body:
   - type: textarea
     id: reproduction
     attributes:
-      label: 👣 Reproduction Steps
+      label: ⏱  버그가 발생한 상황
       description: 버그가 발생한 상황(혹은 재현을 위한 순서)을 적어주세요.
       placeholder: |
         1. Go to '...'
@@ -46,7 +46,7 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: 🤔 Expected Behavior
+      label: 🛠 의도한 동작
       description: 원래 의도했던 동작은 무엇인지 적어주세요.
     validations:
       required: true
@@ -54,6 +54,6 @@ body:
   - type: input
     id: environment
     attributes:
-      label: 📱 Environment
+      label: 🖥 환경
       description: 기기명, OS 버전 등을 적어주세요.
       placeholder: iPhone 14 Pro, iOS 16.0
