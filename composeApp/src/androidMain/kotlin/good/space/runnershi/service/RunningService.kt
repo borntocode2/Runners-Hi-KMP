@@ -117,14 +117,14 @@ class RunningService : Service() {
 
     private fun pauseRunning() {
         RunningStateManager.setRunningState(false)
-        locationTracker.stopTracking()
         // 알림 업데이트 (PAUSED 표시)
         updateNotification("PAUSED", calculateDistanceString())
     }
 
     private fun stopRunning() {
         RunningStateManager.setRunningState(false)
-        locationTracker.stopTracking()
+        stopLocationTracking()
+        timerJob?.cancel()
         
         // DB 세션 종료 마킹
         serviceScope.launch {
@@ -159,9 +159,10 @@ class RunningService : Service() {
         trackingJob?.cancel()
         trackingJob = locationTracker.startTracking()
             .onEach { newLocation ->
-                // ViewModel에 있던 로직 그대로 적용
+                val running = RunningStateManager.isRunning.value
                 val lastLoc = lastLocation
-                if (lastLoc != null) {
+
+                if (running && lastLoc != null) {
                     val dist = DistanceCalculator.calculateDistance(lastLoc, newLocation)
                     if (dist >= 2.0) {
                         RunningStateManager.updateLocation(newLocation, dist)
@@ -176,7 +177,7 @@ class RunningService : Service() {
                             dbSource.saveLocation(newLocation, totalDist, duration)
                         }
                     }
-                } else {
+                } else if (running && lastLoc == null) {
                     lastLocation = newLocation
                     RunningStateManager.updateLocation(newLocation, 0.0)
                     RunningStateManager.addPathPoint(newLocation)
@@ -185,8 +186,17 @@ class RunningService : Service() {
                     serviceScope.launch {
                         dbSource.saveLocation(newLocation, 0.0, RunningStateManager.durationSeconds.value)
                     }
+                } else {
+                    // PAUSE 상태: 거리/경로는 증가시키지 않지만 현재 위치는 따라감
+                    lastLocation = newLocation
+                    RunningStateManager.updateLocation(newLocation, 0.0)
                 }
             }.launchIn(serviceScope)
+    }
+
+    private fun stopLocationTracking() {
+        trackingJob?.cancel()
+        trackingJob = null
     }
 
     // --- Notification Helpers ---
