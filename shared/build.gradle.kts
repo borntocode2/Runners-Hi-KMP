@@ -31,6 +31,7 @@ kotlin {
                 implementation(libs.ktor.client.logging)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.multiplatform.settings)
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
         
@@ -47,6 +48,7 @@ kotlin {
             dependencies {
                 implementation(libs.sqldelight.android.driver)
                 implementation(libs.ktor.client.android)
+                implementation(libs.play.services.location)
             }
         }
         
