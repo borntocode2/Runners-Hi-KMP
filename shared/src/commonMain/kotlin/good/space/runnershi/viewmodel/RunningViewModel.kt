@@ -22,8 +22,9 @@ class RunningViewModel(
     private val _totalDistanceMeters = MutableStateFlow(0.0)
     val totalDistanceMeters: StateFlow<Double> = _totalDistanceMeters.asStateFlow()
 
-    private val _pathPoints = MutableStateFlow<List<LocationModel>>(emptyList())
-    val pathPoints: StateFlow<List<LocationModel>> = _pathPoints.asStateFlow()
+    // [핵심 변경] List<List<...>> 구조로 변경 (여러 개의 선분 관리)
+    private val _pathSegments = MutableStateFlow<List<List<LocationModel>>>(emptyList())
+    val pathSegments: StateFlow<List<List<LocationModel>>> = _pathSegments.asStateFlow()
 
     // 러닝 시간 (초)
     private val _durationSeconds = MutableStateFlow(0L)
@@ -33,34 +34,33 @@ class RunningViewModel(
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
-    // 이전 위치를 기억하기 위한 변수
+    // 이전 위치 (거리 계산용)
     private var lastLocation: LocationModel? = null
-
-    // GPS 노이즈 필터링 임계값 (예: 2미터 미만 이동은 무시)
     private val MIN_DISTANCE_THRESHOLD = 2.0
 
-    // 러닝 시작
+    // --- 동작 로직 ---
+
     fun startRun() {
-        if (_isRunning.value) return // 이미 실행 중이면 무시
+        if (_isRunning.value) return
+
+        // 초기화 로직 (처음 시작할 때만)
+        if (_durationSeconds.value == 0L) {
+            _totalDistanceMeters.value = 0.0
+            _pathSegments.value = listOf(emptyList()) // 첫 번째 세그먼트 준비
+            lastLocation = null
+        } else {
+            // [재개 Resume 상황]
+            // 이전에 일시정지 했으므로, 새로운 세그먼트를 추가해줍니다.
+            // 예: [[A,B,C]] -> [[A,B,C], []]
+            _pathSegments.value = _pathSegments.value + listOf(emptyList())
+            
+            // [중요] 재개 시에는 lastLocation을 초기화해야 '순간이동' 거리가 더해지지 않습니다.
+            lastLocation = null 
+        }
 
         _isRunning.value = true
-        
-        // 데이터 초기화 (재시작 시) - 필요에 따라 정책 결정
-        if (_durationSeconds.value == 0L) {
-            _pathPoints.value = emptyList()
-            _totalDistanceMeters.value = 0.0
-            lastLocation = null
-        }
-
-        // 1. 위치 추적 시작
-        scope.launch {
-            locationTracker.startTracking().collect { newLocation ->
-                updateRunData(newLocation)
-            }
-        }
-
-        // 2. 타이머 시작
         startTimer()
+        startLocationTracking()
     }
 
     // 타이머 로직
@@ -74,47 +74,76 @@ class RunningViewModel(
         }
     }
 
-    // 러닝 일시정지 (Pause)
     fun pauseRun() {
         _isRunning.value = false
-        timerJob?.cancel() // 타이머 멈춤
-        locationTracker.stopTracking() // 위치 추적도 멈춤 (배터리 절약)
+        timerJob?.cancel()
+        locationTracker.stopTracking()
+        
+        // 일시정지 시점에는 특별히 데이터를 변형하지 않아도 됩니다.
+        // 재개(startRun)할 때 새 리스트를 만드는 것이 더 안전합니다.
     }
 
-    // 러닝 종료 (Stop & Reset)
     fun stopRun() {
-        pauseRun() // 우선 멈춤
-        // 여기서 서버로 데이터 전송 로직 호출 가능
-        // sendDataToServer(...)
-        
-        // 상태 초기화는 사용자가 "저장" 버튼을 누른 후 수행하는 것이 보통
+        pauseRun()
+        // TODO: 저장 로직 (List<List<LocationModel>> 전체를 저장해야 함)
+    }
+
+    private fun startLocationTracking() {
+        scope.launch {
+            locationTracker.startTracking().collect { newLocation ->
+                // 일시정지 상태가 아닐 때만 데이터 처리
+                if (_isRunning.value) {
+                    updateRunData(newLocation)
+                }
+            }
+        }
     }
 
     private fun updateRunData(newLocation: LocationModel) {
         val lastLoc = lastLocation
 
+        // 1. 거리 계산 (이전 위치가 있고, 현재 세그먼트 내에서 이어지는 경우에만)
         if (lastLoc != null) {
-            // 거리 계산 수행
             val distanceDelta = DistanceCalculator.calculateDistance(lastLoc, newLocation)
 
-            // 노이즈 필터링: 의미 있는 거리만큼 이동했는지 확인
             if (distanceDelta >= MIN_DISTANCE_THRESHOLD) {
                 _totalDistanceMeters.value += distanceDelta
-                lastLocation = newLocation // 유효한 이동일 때만 갱신
+                lastLocation = newLocation
                 _currentLocation.value = newLocation
                 
-                // 경로 리스트에 좌표 추가
-                // 주의: StateFlow는 객체 참조가 바뀌어야 방출(Emit)되므로, 새 리스트를 만들어 할당합니다.
-                val currentList = _pathPoints.value
-                _pathPoints.value = currentList + newLocation
+                // 2. 경로 추가
+                addPointToCurrentSegment(newLocation)
             }
         } else {
-            // 첫 위치 수신 시
+            // [세그먼트의 시작점]
+            // Resume 직후거나, 맨 처음 시작일 때
+            // 거리는 더하지 않고 위치만 기록함
             lastLocation = newLocation
             _currentLocation.value = newLocation
             
-            // 시작점 추가
-            _pathPoints.value = listOf(newLocation)
+            // 경로 추가
+            addPointToCurrentSegment(newLocation)
+        }
+    }
+
+    // 현재 활성화된 마지막 세그먼트에 점을 추가하는 헬퍼 함수
+    private fun addPointToCurrentSegment(point: LocationModel) {
+        val currentSegments = _pathSegments.value
+        if (currentSegments.isNotEmpty()) {
+            val lastSegmentIndex = currentSegments.lastIndex
+            val lastSegment = currentSegments[lastSegmentIndex]
+            
+            // 불변성 유지를 위해 새로운 리스트 생성
+            val newSegment = lastSegment + point
+            
+            // 전체 리스트 교체
+            val newSegments = currentSegments.toMutableList()
+            newSegments[lastSegmentIndex] = newSegment
+            
+            _pathSegments.value = newSegments
+        } else {
+            // 방어 코드: 혹시 세그먼트가 하나도 없다면 새로 생성
+            _pathSegments.value = listOf(listOf(point))
         }
     }
 }
