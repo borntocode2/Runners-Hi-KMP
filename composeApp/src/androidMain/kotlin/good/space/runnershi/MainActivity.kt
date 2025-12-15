@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import good.space.runnershi.location.AndroidLocationTracker
+import good.space.runnershi.service.AndroidServiceController
 import good.space.runnershi.shared.di.androidPlatformModule
 import good.space.runnershi.shared.di.initKoin
 import good.space.runnershi.ui.screen.RunningScreen
@@ -21,8 +21,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // 1. 의존성 주입 (수동)
-        val locationTracker = AndroidLocationTracker(this)
-        val viewModel = RunningViewModel(locationTracker)
+        val serviceController = AndroidServiceController(this)
+        val viewModel = RunningViewModel(serviceController)
 
         setContent {
             MaterialTheme {

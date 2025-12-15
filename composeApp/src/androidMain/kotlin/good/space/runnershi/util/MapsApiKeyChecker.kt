@@ -17,7 +17,7 @@ object MapsApiKeyChecker {
             val bundle: Bundle = ai.metaData
             val apiKey = bundle.getString("com.google.android.geo.API_KEY")
             apiKey != null && apiKey.isNotBlank() && apiKey != "YOUR_API_KEY_HERE"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
