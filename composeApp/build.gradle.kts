@@ -44,6 +44,7 @@ kotlin {
             implementation(libs.androidx.room.ktx)
             
             implementation(libs.androidx.lifecycle.runtimeKtx)
+            implementation(libs.androidx.security.crypto) // EncryptedSharedPreferences
         }
         
         commonMain.dependencies {
