@@ -22,11 +22,14 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import good.space.runnershi.util.MapsApiKeyChecker
 import good.space.runnershi.util.TimeFormatter
+import good.space.runnershi.viewmodel.MainViewModel
 import good.space.runnershi.viewmodel.RunningViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun RunningScreen(
-    viewModel: RunningViewModel
+    viewModel: RunningViewModel,
+    mainViewModel: MainViewModel
 ) {
     val context = LocalContext.current
     
@@ -77,6 +80,9 @@ fun RunningScreen(
 
     // API 키 확인
     val isApiKeySet = remember { MapsApiKeyChecker.isApiKeySet(context) }
+    
+    // 로그아웃 처리
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
         // --- [A] 지도 레이어 ---
@@ -131,6 +137,33 @@ fun RunningScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF6200EE),
                     textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        // --- [C] 로그아웃 버튼 (상단 우측) - 지도 위에 표시 ---
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = Color.White.copy(alpha = 0.95f),
+            shadowElevation = 4.dp
+        ) {
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        mainViewModel.logout()
+                    }
+                },
+                modifier = Modifier.padding(0.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color(0xFF6200EE)
+                )
+            ) {
+                Text(
+                    text = "로그아웃",
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
         }

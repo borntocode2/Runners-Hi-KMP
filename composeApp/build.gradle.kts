@@ -45,6 +45,11 @@ kotlin {
             
             implementation(libs.androidx.lifecycle.runtimeKtx)
             implementation(libs.androidx.security.crypto) // EncryptedSharedPreferences
+            
+            // Ktor Client (Android 전용)
+            implementation(libs.ktor.client.android)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         
         commonMain.dependencies {
@@ -72,13 +77,15 @@ android {
     namespace = "good.space.runnershi"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
-    // API Key 로딩 로직 (유지)
+    // API Key 및 Base URL 로딩 로직
     val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
         localPropertiesFile.inputStream().use { localProperties.load(it) }
     }
     val mapsApiKey = localProperties.getProperty("MAPS_API_KEY", "")
+    // 기본값: 에뮬레이터에서 개발 머신의 localhost 접근용 (10.0.2.2)
+    val baseUrl = localProperties.getProperty("BASE_URL", "http://10.0.2.2:8080")
 
     defaultConfig {
         applicationId = "good.space.runnershi"
@@ -88,6 +95,13 @@ android {
         versionName = "1.0"
         
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        
+        // BuildConfig에 BASE_URL 주입
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+    }
+    
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {

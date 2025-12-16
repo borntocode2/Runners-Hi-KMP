@@ -54,5 +54,11 @@ class MainViewModel(
     fun onLoginSuccess() {
         _appState.value = AppState.LoggedIn
     }
+    
+    // 로그아웃 처리
+    suspend fun logout() {
+        tokenStorage.clearTokens()
+        _appState.value = AppState.NeedsLogin
+    }
 }
 
