@@ -1,10 +1,11 @@
 package good.space.runnershi.viewmodel
 
 import good.space.runnershi.model.domain.RunResult
-import good.space.runnershi.repository.MockRunRepository
+import good.space.runnershi.model.dto.running.PersonalBestResponse
 import good.space.runnershi.repository.RunRepository
 import good.space.runnershi.service.ServiceController
 import good.space.runnershi.state.RunningStateManager
+import good.space.runnershi.util.format
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,29 @@ class RunningViewModel(
     // 결과 화면 표시 여부 및 데이터
     private val _runResult = MutableStateFlow<RunResult?>(null)
     val runResult: StateFlow<RunResult?> = _runResult.asStateFlow()
+    
+    // 최대 기록 (Personal Best)
+    private val _personalBest = MutableStateFlow<PersonalBestResponse?>(null)
+    val personalBest: StateFlow<PersonalBestResponse?> = _personalBest.asStateFlow()
+    
+    init {
+        // 앱 시작 시 최대 기록 조회
+        fetchPersonalBest()
+    }
+    
+    private fun fetchPersonalBest() {
+        scope.launch {
+            runRepository.getPersonalBest()
+                .onSuccess { record ->
+                    _personalBest.value = record
+                    println("✅ [RunningViewModel] PB 조회 성공: ${record?.distanceMeters}m")
+                }
+                .onFailure { e ->
+                    // 에러 발생 시 무시 (PB는 선택적 기능)
+                    println("⚠️ [RunningViewModel] PB 조회 실패: ${e.message}")
+                }
+        }
+    }
 
     fun startRun() {
         if (durationSeconds.value > 0) {
