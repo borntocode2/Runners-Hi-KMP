@@ -6,9 +6,10 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.core.content.edit
 
 class AndroidTokenStorage(
-    private val context: Context
+    context: Context
 ) : TokenStorage {
     
     private val masterKey = MasterKey.Builder(context)
@@ -29,10 +30,10 @@ class AndroidTokenStorage(
     }
     
     override suspend fun saveTokens(accessToken: String, refreshToken: String) = withContext(Dispatchers.IO) {
-        sharedPreferences.edit()
-            .putString(KEY_ACCESS_TOKEN, accessToken)
-            .putString(KEY_REFRESH_TOKEN, refreshToken)
-            .apply()
+        sharedPreferences.edit {
+            putString(KEY_ACCESS_TOKEN, accessToken)
+                .putString(KEY_REFRESH_TOKEN, refreshToken)
+        }
     }
     
     override suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
@@ -43,11 +44,13 @@ class AndroidTokenStorage(
         sharedPreferences.getString(KEY_REFRESH_TOKEN, null)
     }
     
-    override suspend fun clearTokens() = withContext(Dispatchers.IO) {
-        sharedPreferences.edit()
-            .remove(KEY_ACCESS_TOKEN)
-            .remove(KEY_REFRESH_TOKEN)
-            .apply()
+    override suspend fun clearTokens() {
+        withContext(Dispatchers.IO) {
+            sharedPreferences.edit(commit = true) {
+                remove(KEY_ACCESS_TOKEN)
+                    .remove(KEY_REFRESH_TOKEN)
+            } // apply() 대신 commit() 사용하여 동기적으로 완료 보장
+        }
     }
 }
 

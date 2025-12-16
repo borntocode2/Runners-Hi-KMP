@@ -50,7 +50,7 @@ class SignUpViewModel(
         }
 
         scope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, isSignUpSuccess = false) }
 
             val result = authRepository.signUp(
                 SignUpRequest(state.email, state.password, state.nickname)
@@ -60,9 +60,14 @@ class SignUpViewModel(
                 tokenStorage.saveTokens(response.accessToken, response.refreshToken)
                 _uiState.update { it.copy(isLoading = false, isSignUpSuccess = true) }
             }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "회원가입 실패") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "회원가입 실패", isSignUpSuccess = false) }
             }
         }
+    }
+    
+    // 회원가입 성공 상태 리셋 (로그아웃 후 다시 회원가입 화면으로 돌아왔을 때 사용)
+    fun resetSignUpSuccess() {
+        _uiState.update { it.copy(isSignUpSuccess = false) }
     }
 }
 

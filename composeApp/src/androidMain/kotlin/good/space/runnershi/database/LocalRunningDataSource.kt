@@ -32,6 +32,14 @@ class LocalRunningDataSource(context: Context) {
     suspend fun saveLocation(location: LocationModel, totalDistance: Double, durationSeconds: Long) {
         val runId = currentRunId ?: return
 
+        // 세션이 존재하는지 확인 (로그아웃 등으로 삭제되었을 수 있음)
+        val session = dao.getUnfinishedSession()
+        if (session == null || session.runId != runId) {
+            // 세션이 없거나 다른 세션이면 저장하지 않음
+            currentRunId = null
+            return
+        }
+
         // 2-1. 세션 정보 업데이트 (요약 정보)
         dao.updateSessionStats(runId, totalDistance, durationSeconds)
 

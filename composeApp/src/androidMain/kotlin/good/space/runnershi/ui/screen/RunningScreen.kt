@@ -83,6 +83,7 @@ fun RunningScreen(
     
     // 로그아웃 처리
     val scope = rememberCoroutineScope()
+    var showLogoutConfirmDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // --- [A] 지도 레이어 ---
@@ -152,8 +153,14 @@ fun RunningScreen(
         ) {
             OutlinedButton(
                 onClick = {
-                    scope.launch {
-                        mainViewModel.logout()
+                    // 러닝 중이거나 기록이 있으면 확인 다이얼로그 표시
+                    if (isRunning || durationSeconds > 0) {
+                        showLogoutConfirmDialog = true
+                    } else {
+                        // 러닝 중이 아니면 바로 로그아웃
+                        scope.launch {
+                            mainViewModel.logout()
+                        }
                     }
                 },
                 modifier = Modifier.padding(0.dp),
@@ -166,6 +173,34 @@ fun RunningScreen(
                     style = MaterialTheme.typography.labelMedium
                 )
             }
+        }
+        
+        // 로그아웃 확인 다이얼로그
+        if (showLogoutConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showLogoutConfirmDialog = false },
+                title = { Text("로그아웃 확인") },
+                text = { Text("현재 러닝 기록은 제거됩니다. 정말 로그아웃하시겠습니까?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                mainViewModel.logout()
+                                showLogoutConfirmDialog = false
+                            }
+                        }
+                    ) {
+                        Text("로그아웃", color = Color.Red)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showLogoutConfirmDialog = false }
+                    ) {
+                        Text("취소")
+                    }
+                }
+            )
         }
 
         // --- [B] 정보 및 컨트롤 패널 (HUD) ---

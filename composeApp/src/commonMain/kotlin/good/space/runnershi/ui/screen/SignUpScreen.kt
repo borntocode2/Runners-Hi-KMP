@@ -30,7 +30,11 @@ fun SignUpScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.isSignUpSuccess) {
-        if (uiState.isSignUpSuccess) onSignUpSuccess()
+        if (uiState.isSignUpSuccess) {
+            onSignUpSuccess()
+            // 성공 후 상태 리셋 (다시 회원가입 화면으로 돌아왔을 때 재실행 방지)
+            viewModel.resetSignUpSuccess()
+        }
     }
 
     LaunchedEffect(uiState.errorMessage) {

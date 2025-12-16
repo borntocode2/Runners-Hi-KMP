@@ -29,9 +29,13 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 로그인 성공 시 콜백
+    // 로그인 성공 시 콜백 (한 번만 실행되도록 처리)
     LaunchedEffect(uiState.isLoginSuccess) {
-        if (uiState.isLoginSuccess) onLoginSuccess()
+        if (uiState.isLoginSuccess) {
+            onLoginSuccess()
+            // 성공 후 상태 리셋 (다시 로그인 화면으로 돌아왔을 때 재실행 방지)
+            viewModel.resetLoginSuccess()
+        }
     }
 
     // 에러 메시지 스낵바

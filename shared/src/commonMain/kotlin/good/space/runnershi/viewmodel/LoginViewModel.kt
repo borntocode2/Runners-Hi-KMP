@@ -44,7 +44,7 @@ class LoginViewModel(
         }
 
         scope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, isLoginSuccess = false) }
 
             val result = authRepository.login(LoginRequest(current.email, current.password))
 
@@ -52,8 +52,13 @@ class LoginViewModel(
                 tokenStorage.saveTokens(response.accessToken, response.refreshToken)
                 _uiState.update { it.copy(isLoading = false, isLoginSuccess = true) }
             }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "로그인 실패") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "로그인 실패", isLoginSuccess = false) }
             }
         }
+    }
+    
+    // 로그인 성공 상태 리셋 (로그아웃 후 다시 로그인 화면으로 돌아왔을 때 사용)
+    fun resetLoginSuccess() {
+        _uiState.update { it.copy(isLoginSuccess = false) }
     }
 }
