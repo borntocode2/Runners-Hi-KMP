@@ -1,2 +1,3 @@
 sdk.dir={안드로이드 SDK 주소}
 MAPS_API_KEY={구글 맵스 API KEY}
+BASE_URL={서버 BASE URL}

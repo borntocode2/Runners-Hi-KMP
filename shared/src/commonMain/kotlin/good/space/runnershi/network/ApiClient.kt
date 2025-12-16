@@ -2,6 +2,7 @@ package good.space.runnershi.network
 
 import good.space.runnershi.auth.TokenStorage
 import good.space.runnershi.model.dto.auth.TokenRefreshRequest
+import good.space.runnershi.model.dto.auth.TokenRefreshResponse
 import good.space.runnershi.model.dto.auth.TokenResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -74,7 +75,7 @@ class ApiClient(
         }
     }
 
-    // 실제 갱신 API 호출 (가정)
+    // 실제 갱신 API 호출
     private suspend fun refreshAccessTokenApi(refreshToken: String): TokenResponse {
         // Ktor Client를 새로 만들거나, Auth 설정을 뺀 요청을 보내야 무한 루프 방지
         val refreshClient = HttpClient { 
@@ -85,12 +86,17 @@ class ApiClient(
             }
         }
         
-        val response = refreshClient.post("$baseUrl/auth/refresh") {
+        val response = refreshClient.post("$baseUrl/api/v1/auth/refresh") {
             setBody(TokenRefreshRequest(refreshToken))
             contentType(ContentType.Application.Json)
         }
         
-        return response.body<TokenResponse>()
+        // 서버는 TokenRefreshResponse(accessToken만)를 반환하므로, 기존 refreshToken과 함께 TokenResponse로 변환
+        val refreshResponse = response.body<TokenRefreshResponse>()
+        return TokenResponse(
+            accessToken = refreshResponse.accessToken,
+            refreshToken = refreshToken // refreshToken은 갱신되지 않고 그대로 유지
+        )
     }
 }
 

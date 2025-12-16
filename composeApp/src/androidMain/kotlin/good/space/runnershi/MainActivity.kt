@@ -25,7 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import good.space.runnershi.auth.AndroidTokenStorage
 import good.space.runnershi.database.LocalRunningDataSource
 import good.space.runnershi.network.ApiClient
-import good.space.runnershi.repository.MockAuthRepository
+import good.space.runnershi.repository.AuthRepositoryImpl
 import good.space.runnershi.service.AndroidServiceController
 import good.space.runnershi.shared.di.androidPlatformModule
 import good.space.runnershi.shared.di.initKoin
@@ -38,7 +38,11 @@ import good.space.runnershi.viewmodel.LoginViewModel
 import good.space.runnershi.viewmodel.MainViewModel
 import good.space.runnershi.viewmodel.RunningViewModel
 import good.space.runnershi.viewmodel.SignUpViewModel
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.koin.core.context.GlobalContext
 
 class MainActivity : ComponentActivity() {
@@ -51,10 +55,25 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // 1. 의존성 주입 (수동)
+        // 1. BuildConfig에서 BASE_URL 읽기 (Gradle에서 local.properties 값을 주입)
+        val baseUrl = BuildConfig.BASE_URL
+
+        // 2. 의존성 주입 (수동)
         val tokenStorage = AndroidTokenStorage(this)
-        val authRepository = MockAuthRepository() // 서버 준비 전 Mock 사용
-        val apiClient = ApiClient(tokenStorage)
+        
+        // 3. AuthRepository용 HttpClient 생성 (인증 없이 사용)
+        val authHttpClient = HttpClient {
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    ignoreUnknownKeys = true
+                })
+            }
+        }
+        val authRepository = AuthRepositoryImpl(authHttpClient, baseUrl)
+        
+        // 4. ApiClient 생성 (인증 플러그인 포함)
+        val apiClient = ApiClient(tokenStorage, baseUrl)
         val serviceController = AndroidServiceController(this)
 
         val runningViewModel = RunningViewModel(serviceController)
@@ -181,7 +200,7 @@ fun AppRoot(
             )
         }
         is AppState.LoggedIn -> {
-            AppContent(runningViewModel)
+            AppContent(runningViewModel, mainViewModel)
         }
         else -> {
             CircularProgressIndicator()
@@ -216,7 +235,10 @@ fun AuthFlow(
 }
 
 @Composable
-fun AppContent(viewModel: RunningViewModel) {
+fun AppContent(
+    viewModel: RunningViewModel,
+    mainViewModel: MainViewModel
+) {
     val runResult by viewModel.runResult.collectAsState()
 
     if (runResult != null) {
@@ -225,7 +247,10 @@ fun AppContent(viewModel: RunningViewModel) {
             onClose = { viewModel.closeResultScreen() }
         )
     } else {
-        RunningScreen(viewModel = viewModel)
+        RunningScreen(
+            viewModel = viewModel,
+            mainViewModel = mainViewModel
+        )
     }
 }
 
