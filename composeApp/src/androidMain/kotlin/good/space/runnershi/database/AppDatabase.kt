@@ -40,6 +40,10 @@ interface RunningDao {
     // [폐기용] 세션 삭제 (CASCADE로 좌표도 자동 삭제됨)
     @Query("DELETE FROM run_sessions WHERE runId = :runId")
     suspend fun deleteSessionById(runId: String)
+    
+    // [로그아웃용] 모든 세션 삭제 (완료된 것 포함, CASCADE로 좌표도 자동 삭제됨)
+    @Query("DELETE FROM run_sessions")
+    suspend fun deleteAllSessions()
 }
 
 @Database(entities = [RunSessionEntity::class, LocationEntity::class], version = 2)

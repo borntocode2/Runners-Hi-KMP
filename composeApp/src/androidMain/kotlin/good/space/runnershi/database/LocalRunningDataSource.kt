@@ -126,5 +126,13 @@ class LocalRunningDataSource(context: Context) {
         currentRunId = null
         currentSegmentIndex = 0
     }
+    
+    // 6. [로그아웃용] 모든 러닝 데이터 삭제 (완료된 세션 포함)
+    suspend fun discardAllRuns() = withContext(Dispatchers.IO) {
+        // 모든 세션 삭제 (CASCADE로 좌표도 자동 삭제됨)
+        dao.deleteAllSessions()
+        currentRunId = null
+        currentSegmentIndex = 0
+    }
 }
 

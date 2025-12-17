@@ -101,8 +101,9 @@ class MainActivity : ComponentActivity() {
         mainViewModel.onLogoutCallback = {
             // 1. 서비스를 먼저 중지 (위치 추적 및 DB 저장 중단)
             serviceController.stopService()
-            // 2. 미완료 러닝 데이터 삭제
-            dbSource.discardRun()
+            // 2. 미완료 러닝 데이터 삭제 (완료된 세션 포함하여 모든 세션 삭제)
+            // 주의: stopService()가 finishRun()을 호출하므로, 완료된 세션도 삭제해야 함
+            dbSource.discardAllRuns()
         }
 
         setContent {
