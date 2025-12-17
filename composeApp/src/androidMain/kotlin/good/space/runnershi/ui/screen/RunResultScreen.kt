@@ -14,24 +14,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.*
 import good.space.runnershi.model.domain.RunResult
+import good.space.runnershi.ui.component.ServerSuccessBanner
 import good.space.runnershi.util.TimeFormatter
 import good.space.runnershi.util.format
+import good.space.runnershi.viewmodel.UploadState
 
 @Composable
 fun RunResultScreen(
     result: RunResult,
+    uploadState: UploadState,
     onClose: () -> Unit
 ) {
     val cameraPositionState = rememberCameraPositionState()
     
     // 저장 조건 체크 (ViewModel의 로직과 동일하게 유지)
-    val isSaved = remember(result) {
-        result.totalDistanceMeters >= 100.0 && result.durationSeconds >= 60
+    val isShortRun = remember(result) {
+        result.totalDistanceMeters < 100.0 || result.durationSeconds < 60
     }
 
     // 화면 진입 시 전체 경로가 보이도록 줌 아웃 (LatLngBounds)
@@ -58,8 +62,26 @@ fun RunResultScreen(
             .background(Color.White)
             .verticalScroll(rememberScrollState())
     ) {
-        // 저장되지 않은 경우에만 배너 표시
-        if (!isSaved) {
+        // ------------------------------------------------
+        // 📢 인라인 배너 영역
+        // ------------------------------------------------
+        
+        // 1. [성공] 서버 저장 완료 시
+        if (uploadState == UploadState.SUCCESS) {
+            ServerSuccessBanner()
+        }
+        
+        // 2. [로딩] 업로드 중일 때
+        if (uploadState == UploadState.UPLOADING) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+        }
+        
+        // 3. [경고] 기록 미달 시
+        if (isShortRun) {
             NotSavedWarningBanner()
         }
 
@@ -111,12 +133,22 @@ fun RunResultScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
 
+            // ------------------------------------------------
+            // 🔘 하단 버튼 영역
+            // ------------------------------------------------
             Button(
                 onClick = onClose,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("SAVE & CLOSE")
+                Text(
+                    text = "Close",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
