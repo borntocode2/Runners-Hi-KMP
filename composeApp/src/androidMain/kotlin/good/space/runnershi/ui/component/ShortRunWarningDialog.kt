@@ -33,7 +33,7 @@ fun ShortRunWarningDialog(
         },
         text = {
             Text(
-                text = "러닝이 너무 짧아서 저장되지 않았어요.\n1분 이상 달렸으면서 100m 이상 달렸을 경우에만 기록이 저장돼요.",
+                text = "러닝이 너무 짧아서 저장되지 않았어요.\n3분 이상 달렸으면서 300m 이상 달렸을 경우에만 기록이 저장돼요.",
                 textAlign = TextAlign.Center
             )
         },

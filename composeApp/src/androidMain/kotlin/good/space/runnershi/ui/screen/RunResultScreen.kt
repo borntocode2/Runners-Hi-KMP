@@ -35,7 +35,7 @@ fun RunResultScreen(
     
     // 저장 조건 체크 (ViewModel의 로직과 동일하게 유지)
     val isShortRun = remember(result) {
-        result.totalDistanceMeters < 100.0 || result.duration.inWholeSeconds < 60
+        result.totalDistanceMeters < 300.0 || result.duration.inWholeSeconds < 180
     }
 
     // 화면 진입 시 전체 경로가 보이도록 줌 아웃 (LatLngBounds)
@@ -192,7 +192,7 @@ fun NotSavedWarningBanner() {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "유효한 러닝 기록(거리 100m 이상, 시간 1분 이상)만 히스토리에 저장됩니다.",
+                    text = "유효한 러닝 기록(거리 300m 이상, 시간 3분 이상)만 히스토리에 저장됩니다.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
