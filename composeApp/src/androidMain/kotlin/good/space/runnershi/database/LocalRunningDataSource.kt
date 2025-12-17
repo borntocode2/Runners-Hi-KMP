@@ -5,6 +5,7 @@ import good.space.runnershi.model.domain.LocationModel
 import good.space.runnershi.state.RunningStateManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Instant
 import java.util.UUID
 
 class LocalRunningDataSource(context: Context) {
@@ -97,7 +98,9 @@ class LocalRunningDataSource(context: Context) {
         
         RunningStateManager.reset()
         // 시작 시간 복구 (휴식시간 포함한 총 시간 계산용)
-        RunningStateManager.setStartTime(unfinishedSession.startTime)
+        // Room DB는 Long으로 저장하므로 Instant로 변환
+        val startTimeInstant = Instant.fromEpochMilliseconds(unfinishedSession.startTime)
+        RunningStateManager.setStartTime(startTimeInstant)
         RunningStateManager.setRunningState(false) // PAUSE 상태로 시작
         RunningStateManager.updateDuration(unfinishedSession.durationSeconds)
         RunningStateManager.restoreTotalDistance(unfinishedSession.totalDistance)

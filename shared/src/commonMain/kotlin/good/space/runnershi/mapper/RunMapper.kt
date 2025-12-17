@@ -27,9 +27,9 @@ object RunMapper {
 
         return RunCreateRequest(
             distanceMeters = domain.totalDistanceMeters,
-            durationSeconds = domain.durationSeconds,
-            totalSeconds = domain.totalSeconds, // 휴식시간을 포함한 총 시간
-            startedAt = TimeConverter.toIso8601(domain.startedAt), // Long -> ISO String
+            runningDuration = domain.duration, // Duration 타입 (실제 러닝 시간)
+            totalDuration = domain.totalTime, // Duration 타입 (휴식시간 포함한 총 시간)
+            startedAt = domain.startedAt, // Instant 타입
             locations = flatLocations
         )
     }

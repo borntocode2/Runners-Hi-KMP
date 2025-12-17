@@ -4,6 +4,7 @@ import good.space.runnershi.model.domain.LocationModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.Instant
 
 // 앱 어디서든 접근 가능한 러닝 데이터 저장소
 object RunningStateManager {
@@ -24,8 +25,8 @@ object RunningStateManager {
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
     // 러닝 시작 시간 (휴식시간 포함한 총 시간 계산용)
-    private val _startTime = MutableStateFlow<Long?>(null)
-    val startTime: StateFlow<Long?> = _startTime.asStateFlow()
+    private val _startTime = MutableStateFlow<Instant?>(null)
+    val startTime: StateFlow<Instant?> = _startTime.asStateFlow()
 
     // 상태 업데이트 함수들 (Service에서 호출)
     fun updateLocation(location: LocationModel, distanceDelta: Double) {
@@ -67,8 +68,8 @@ object RunningStateManager {
     }
     
     // 러닝 시작 시간 설정 (첫 START 버튼 클릭 시)
-    fun setStartTime(timestamp: Long) {
-        _startTime.value = timestamp
+    fun setStartTime(instant: Instant) {
+        _startTime.value = instant
     }
     
     // [NEW] 복구용 함수: 강제로 값을 세팅

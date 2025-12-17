@@ -35,7 +35,7 @@ fun RunResultScreen(
     
     // 저장 조건 체크 (ViewModel의 로직과 동일하게 유지)
     val isShortRun = remember(result) {
-        result.totalDistanceMeters < 100.0 || result.durationSeconds < 60
+        result.totalDistanceMeters < 100.0 || result.duration.inWholeSeconds < 60
     }
 
     // 화면 진입 시 전체 경로가 보이도록 줌 아웃 (LatLngBounds)
@@ -127,7 +127,7 @@ fun RunResultScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 ResultItem("Distance", "%.2f km".format(result.totalDistanceMeters / 1000))
-                ResultItem("Time", TimeFormatter.formatSecondsToTime(result.durationSeconds))
+                ResultItem("Time", TimeFormatter.formatSecondsToTime(result.duration.inWholeSeconds))
                 ResultItem("Pace", result.avgPace)
             }
             

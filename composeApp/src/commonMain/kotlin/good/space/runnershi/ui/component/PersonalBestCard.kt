@@ -87,13 +87,13 @@ fun PersonalBestCard(
                         // 시간 및 날짜
                         Row {
                             Text(
-                                text = "⏱ ${TimeFormatter.formatSecondsToTime(personalBest.durationSeconds)}",
+                                text = "⏱ ${TimeFormatter.formatSecondsToTime(personalBest.duration.inWholeSeconds)}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "📅 ${personalBest.startedAt.take(10)}", // 날짜만 자르기 (YYYY-MM-DD)
+                                text = "📅 ${personalBest.startedAt.toString().take(10)}", // 날짜만 자르기 (YYYY-MM-DD)
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White
                             )

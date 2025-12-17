@@ -18,9 +18,10 @@ class RunningService (
             .orElseThrow{ IllegalArgumentException("User를 찾을 수 없습니다 in RunningService") }
 
         val running = Running(
-            durationSeconds = request.durationSeconds,
+            duration = request.runningDuration, // Duration 타입
+            totalTime = request.totalDuration, // Duration 타입
             distanceMeters = request.distanceMeters,
-            stratedAt = request.startedAt,
+            startedAt = request.startedAt, // Instant 타입
             user = user
         )
 

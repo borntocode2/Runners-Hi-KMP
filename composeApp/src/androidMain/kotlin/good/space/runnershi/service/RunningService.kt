@@ -16,6 +16,7 @@ import good.space.runnershi.model.domain.LocationModel
 import good.space.runnershi.state.RunningStateManager
 import good.space.runnershi.util.DistanceCalculator
 import good.space.runnershi.util.TimeFormatter
+import good.space.runnershi.util.format
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 class RunningService : Service() {
 
@@ -81,7 +83,7 @@ class RunningService : Service() {
     private fun startRunning() {
         RunningStateManager.reset()
         // 러닝 시작 시간 기록 (휴식시간 포함한 총 시간 계산용)
-        RunningStateManager.setStartTime(System.currentTimeMillis())
+        RunningStateManager.setStartTime(Clock.System.now())
         RunningStateManager.setRunningState(true)
         RunningStateManager.addEmptySegment() // 첫 세그먼트
 
@@ -375,7 +377,7 @@ class RunningService : Service() {
     
     private fun calculateDistanceString(): String {
         val dist = RunningStateManager.totalDistanceMeters.value
-        return String.format("%.2f km", dist / 1000.0)
+        return "%.2f km".format(dist / 1000.0)
     }
     
     /**
