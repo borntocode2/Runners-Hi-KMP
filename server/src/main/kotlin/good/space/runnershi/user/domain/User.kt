@@ -28,4 +28,11 @@ abstract class User(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null
 
+    var exp: Long = 0;
+
+    fun increaseExp(amount: Long) {
+        this.exp += amount
+    }
+
 }
+

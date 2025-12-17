@@ -3,8 +3,10 @@ package good.space.runnershi.global.running.service
 import good.space.runnershi.global.running.entity.Running
 import good.space.runnershi.global.running.repository.RunningRepository
 import good.space.runnershi.model.dto.running.RunCreateRequest
+import good.space.runnershi.user.dto.UpdatedUserResponse
 import good.space.runnershi.user.repository.UserRepository
 import jakarta.transaction.Transactional
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 
 @Service
@@ -28,5 +30,15 @@ class RunningService (
         val savedRunning = runningRepository.save(running)
 
         return savedRunning.id!!
+    }
+
+    @Transactional
+    fun updateUser(userId: Long, amount: Long): UpdatedUserResponse {
+        val user = userRepository.findById(userId)
+            .orElseThrow{ IllegalArgumentException("User를 찾을 수 없습니다 in RunningService") }
+
+        user.increaseExp(amount);
+
+        return UpdatedUserResponse.from(user);
     }
 }
