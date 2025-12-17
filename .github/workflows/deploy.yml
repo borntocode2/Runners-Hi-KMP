@@ -10,8 +10,6 @@ permissions:
 
 env:
   DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
-  IMAGE_LATEST: ghcr.io/${{ github.repository_owner }}/runners-hi:latest
-  IMAGE_SHA: ghcr.io/${{ github.repository_owner }}/runners-hi:${{ github.sha }}
 
 jobs:
   build-and-push:
@@ -19,6 +17,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set IMAGE (lowercase)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Login to GHCR (GitHub Container Registry)
         uses: docker/login-action@v3
@@ -34,8 +38,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_LATEST }}
-            ${{ env.IMAGE_SHA }}
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
 
   deploy:
     needs: build-and-push
@@ -43,6 +47,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set IMAGE (lowercase)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Login to GHCR (self-hosted)
         uses: docker/login-action@v3
@@ -56,19 +66,16 @@ jobs:
           set -euo pipefail
           
           sudo mkdir -p "${DEPLOY_DIR}"
-          
           sudo cp ./docker-compose.yml "${DEPLOY_DIR}/docker-compose.yml"
 
           if [ -f "${DEPLOY_DIR}/.env" ]; then
             sudo cp "${DEPLOY_DIR}/.env" "${DEPLOY_DIR}/.env.bak.$(date +%Y%m%d_%H%M%S)"
           fi
           
-          # app.env.bak 5개만 남기기
           ls -1t "${DEPLOY_DIR}"/.env.bak.* 2>/dev/null | tail -n +6 | xargs -r sudo rm -f
           
-          # app.env를 Github Secrets로 매 배포마다 갱신
           sudo bash -lc 'cat > "'"${DEPLOY_DIR}/.env"'" << "EOF"
-          APP_IMAGE='"${IMAGE_LATEST}"'
+          APP_IMAGE='"${{ env.IMAGE }}:latest"'
           ${{ secrets.APP_ENV }}
           EOF'
 
@@ -94,8 +101,8 @@ jobs:
           test -f .env
 
           echo "Deploying image:"
-          echo " - ${IMAGE_LATEST}"
-          echo " - ${IMAGE_SHA}"
+          echo " - ${{ env.IMAGE }}:latest"
+          echo " - ${{ env.IMAGE }}:${{ github.sha }}"
 
           docker compose pull app
           docker compose up -d
