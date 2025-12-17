@@ -96,6 +96,8 @@ class LocalRunningDataSource(context: Context) {
         currentRunId = runId
         
         RunningStateManager.reset()
+        // 시작 시간 복구 (휴식시간 포함한 총 시간 계산용)
+        RunningStateManager.setStartTime(unfinishedSession.startTime)
         RunningStateManager.setRunningState(false) // PAUSE 상태로 시작
         RunningStateManager.updateDuration(unfinishedSession.durationSeconds)
         RunningStateManager.restoreTotalDistance(unfinishedSession.totalDistance)

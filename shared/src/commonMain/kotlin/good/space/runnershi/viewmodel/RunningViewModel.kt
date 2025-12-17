@@ -114,14 +114,37 @@ class RunningViewModel(
 
     private fun createRunResultSnapshot(): RunResult {
         val distance = RunningStateManager.totalDistanceMeters.value
-        val seconds = RunningStateManager.durationSeconds.value
+        val durationSeconds = RunningStateManager.durationSeconds.value
+        val startTime = RunningStateManager.startTime.value
+        val finishedAt = System.currentTimeMillis()
+        
+        // totalSeconds: 휴식시간을 포함한 총 시간 (시작부터 종료까지)
+        val totalSeconds = if (startTime != null) {
+            val calculated = (finishedAt - startTime) / 1000
+            // 방어 로직: 음수나 0이면 durationSeconds를 사용 (최소한의 값 보장)
+            if (calculated > 0) calculated else durationSeconds
+        } else {
+            // startTime이 null인 경우 (비정상 상황, 방어 코드)
+            println("⚠️ [RunningViewModel] startTime이 null입니다. durationSeconds를 사용합니다.")
+            durationSeconds
+        }
+        
+        // 추가 검증: totalSeconds가 durationSeconds보다 작으면 durationSeconds 사용
+        val finalTotalSeconds = if (totalSeconds >= durationSeconds) {
+            totalSeconds
+        } else {
+            println("⚠️ [RunningViewModel] totalSeconds($totalSeconds) < durationSeconds($durationSeconds). durationSeconds를 사용합니다.")
+            durationSeconds
+        }
         
         return RunResult(
             totalDistanceMeters = distance,
-            durationSeconds = seconds,
+            durationSeconds = durationSeconds,
+            totalSeconds = finalTotalSeconds,
             pathSegments = RunningStateManager.pathSegments.value,
             calories = (distance * 0.06).toInt(), // 단순 예시 계산
-            avgPace = calculatePace(distance, seconds)
+            startedAt = startTime ?: finishedAt, // null이면 현재 시간 사용
+            avgPace = calculatePace(distance, durationSeconds)
         )
     }
     

@@ -9,7 +9,8 @@ class MockRunRepository : RunRepository {
         // 추후 여기에 Ktor 또는 Retrofit 코드가 들어갑니다.
         println("📡 [Mock Server] Uploading Run Data...")
         println("   - Distance: ${runResult.totalDistanceMeters}m")
-        println("   - Time: ${runResult.durationSeconds}s")
+        println("   - Duration (실제 러닝 시간): ${runResult.durationSeconds}s")
+        println("   - Total (휴식 포함): ${runResult.totalSeconds}s")
         
         // 1초 딜레이로 네트워크 통신 흉내
         kotlinx.coroutines.delay(1000) 

@@ -23,6 +23,10 @@ object RunningStateManager {
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
+    // 러닝 시작 시간 (휴식시간 포함한 총 시간 계산용)
+    private val _startTime = MutableStateFlow<Long?>(null)
+    val startTime: StateFlow<Long?> = _startTime.asStateFlow()
+
     // 상태 업데이트 함수들 (Service에서 호출)
     fun updateLocation(location: LocationModel, distanceDelta: Double) {
         _currentLocation.value = location
@@ -59,6 +63,12 @@ object RunningStateManager {
         _pathSegments.value = emptyList()
         _durationSeconds.value = 0L
         _isRunning.value = false
+        _startTime.value = null
+    }
+    
+    // 러닝 시작 시간 설정 (첫 START 버튼 클릭 시)
+    fun setStartTime(timestamp: Long) {
+        _startTime.value = timestamp
     }
     
     // [NEW] 복구용 함수: 강제로 값을 세팅

@@ -80,6 +80,8 @@ class RunningService : Service() {
 
     private fun startRunning() {
         RunningStateManager.reset()
+        // 러닝 시작 시간 기록 (휴식시간 포함한 총 시간 계산용)
+        RunningStateManager.setStartTime(System.currentTimeMillis())
         RunningStateManager.setRunningState(true)
         RunningStateManager.addEmptySegment() // 첫 세그먼트
 
