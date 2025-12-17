@@ -1,0 +1,76 @@
+services:
+  app:
+    image: ${APP_IMAGE}
+    container_name: runners-hi-app
+    restart: unless-stopped
+
+    env_file:
+      - ./.env
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+
+    networks:
+      - runners-hi-network
+      - nginx-proxy-manager_default
+
+    expose:
+      - "8080"
+
+  redis:
+    image: redis:7-alpine
+    container_name: runners-hi-redis
+    restart: unless-stopped
+
+    command: ["redis-server", "--appendonly", "yes"]
+
+    volumes:
+      - runners-hi-redis-data:/data
+
+    networks:
+      - runners-hi-network
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mysql:
+    image: mysql:8.4
+    container_name: runners-hi-mysql
+    restart: unless-stopped
+
+    env_file:
+      - ./.env
+
+    volumes:
+      - runners-hi-mysql-data:/var/lib/mysql
+
+    networks:
+      - runners-hi-network
+
+    healthcheck:
+      # mysqladmin ping로 MySQL 서버가 응답 가능한지 확인
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+
+volumes:
+  runners-hi-redis-data:
+    external: true
+  runners-hi-mysql-data:
+    external: true
+
+networks:
+  runners-hi-network:
+    external: true
+  nginx-proxy-manager_default:
+    external: true

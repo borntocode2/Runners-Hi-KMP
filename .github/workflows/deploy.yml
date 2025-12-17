@@ -1,0 +1,103 @@
+name: Build, Push (GHCR) and Deploy (Home Server)
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+  IMAGE_LATEST: ghcr.io/${{ github.repository_owner }}/runners-hi:latest
+  IMAGE_SHA: ghcr.io/${{ github.repository_owner }}/runners-hi:${{ github.sha }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR (GitHub Container Registry)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_LATEST }}
+            ${{ env.IMAGE_SHA }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR (self-hosted)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Sync deploy files to server deploy dir + write .env
+        run: |
+          set -euo pipefail
+          
+          sudo mkdir -p "${DEPLOY_DIR}"
+          
+          sudo cp ./docker-compose.yml "${DEPLOY_DIR}/docker-compose.yml"
+
+          if [ -f "${DEPLOY_DIR}/.env" ]; then
+            sudo cp "${DEPLOY_DIR}/.env" "${DEPLOY_DIR}/.env.bak.$(date +%Y%m%d_%H%M%S)"
+          fi
+          
+          # app.env.bak 5개만 남기기
+          ls -1t "${DEPLOY_DIR}"/.env.bak.* 2>/dev/null | tail -n +6 | xargs -r sudo rm -f
+          
+          # app.env를 Github Secrets로 매 배포마다 갱신
+          sudo bash -lc 'cat > "'"${DEPLOY_DIR}/.env"'" << "EOF"
+          APP_IMAGE='"${IMAGE_LATEST}"'
+          ${{ secrets.APP_ENV }}
+          EOF'
+
+          sudo chmod 600 "${DEPLOY_DIR}/.env"
+          sudo chown -R "$USER:$USER" "${DEPLOY_DIR}"
+
+      - name: Ensure docker resources (networks/volumes)
+        run: |
+          set -euo pipefail
+          
+          docker network inspect runners-hi-network >/dev/null 2>&1 || docker network create runners-hi-network
+          docker network inspect nginx-proxy-manager_default >/dev/null 2>&1 || docker network create nginx-proxy-manager_default
+          
+          docker volume inspect runners-hi-redis-data >/dev/null 2>&1 || docker volume create runners-hi-redis-data
+          docker volume inspect runners-hi-mysql-data >/dev/null 2>&1 || docker volume create runners-hi-mysql-data
+
+      - name: Deploy (docker compose)
+        run: |
+          set -euo pipefail
+          cd "${DEPLOY_DIR}"
+
+          test -f docker-compose.yml
+          test -f .env
+
+          echo "Deploying image:"
+          echo " - ${IMAGE_LATEST}"
+          echo " - ${IMAGE_SHA}"
+
+          docker compose pull app
+          docker compose up -d
+          docker compose ps
+          docker ps
