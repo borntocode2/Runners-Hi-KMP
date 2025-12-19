@@ -1,6 +1,6 @@
 package good.space.runnershi.util
 
-import good.space.runnershi.model.domain.LocationModel
+import good.space.runnershi.model.domain.location.LocationModel
 import kotlin.math.*
 
 object DistanceCalculator {

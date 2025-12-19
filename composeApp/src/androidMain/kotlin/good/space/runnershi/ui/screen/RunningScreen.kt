@@ -3,9 +3,15 @@ package good.space.runnershi.ui.screen
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +27,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import good.space.runnershi.service.AndroidServiceController
+import good.space.runnershi.state.PauseType
 import good.space.runnershi.ui.component.PersonalBestIndicator
 import good.space.runnershi.util.MapsApiKeyChecker
 import good.space.runnershi.util.TimeFormatter
@@ -43,6 +50,7 @@ fun RunningScreen(
     val durationSeconds by viewModel.durationSeconds.collectAsState()
     val isRunning by viewModel.isRunning.collectAsState()
     val personalBest by viewModel.personalBest.collectAsState() // 최대 기록
+    val pauseType by viewModel.pauseType.collectAsState()
 
     // 2. 구글 맵 카메라 상태
     val cameraPositionState = rememberCameraPositionState()
@@ -88,6 +96,10 @@ fun RunningScreen(
     // 로그아웃 처리
     val scope = rememberCoroutineScope()
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
+    
+    // 설정값 구독
+    val isAutoPauseEnabled by mainViewModel.isAutoPauseEnabled.collectAsState()
+    var showSettingsDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // --- [A] 지도 레이어 ---
@@ -110,175 +122,211 @@ fun RunningScreen(
                 }
             }
         } else {
-            // API 키가 없을 때 대체 UI 표시
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF5F5F5))
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            // API 키 없음 UI
+            NoApiKeyPlaceholder()
+        }
+        
+        // --- [New] 오토 퍼즈 상태 표시 배지 (상단 중앙) ---
+        AnimatedVisibility(
+            visible = pauseType == PauseType.AUTO_PAUSE_REST,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.padding(8.dp)
             ) {
-                Text(
-                    text = "⚠️ Google Maps API Key 필요",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF6200EE),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "지도를 표시하려면 Google Maps API 키가 필요합니다.\n\n" +
-                            "AndroidManifest.xml 파일에서\n" +
-                            "\"YOUR_API_KEY_HERE\"를 실제 API 키로 교체해주세요.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Gray,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 24.sp
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "API 키 발급:\nconsole.cloud.google.com/google/maps-apis",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6200EE),
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "⏸️  휴식 감지됨 (자동 일시정지)", color = Color.White)
+                }
             }
         }
 
-        // --- [C] 로그아웃 버튼 (상단 우측) - 지도 위에 표시 ---
-        Surface(
+        // --- 상단 우측 버튼 그룹 (설정 + 로그아웃) ---
+        Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp),
-            shape = RoundedCornerShape(8.dp),
-            color = Color.White.copy(alpha = 0.95f),
-            shadowElevation = 4.dp
+            horizontalArrangement = Arrangement.spacedBy(8.dp) // 버튼 사이 간격
         ) {
-            OutlinedButton(
-                onClick = {
-                    // 러닝 중이거나 기록이 있으면 확인 다이얼로그 표시
+            // 1. 설정 버튼 (톱니바퀴)
+            SettingsButton(onClick = { showSettingsDialog = true })
+            
+            // 2. 로그아웃 버튼
+            LogoutButton(
+                onLogoutClick = {
                     if (isRunning || durationSeconds > 0) {
                         showLogoutConfirmDialog = true
                     } else {
-                        // 러닝 중이 아니면 바로 로그아웃
-                        scope.launch {
-                            mainViewModel.logout()
-                        }
-                    }
-                },
-                modifier = Modifier.padding(0.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF6200EE)
-                )
-            ) {
-                Text(
-                    text = "로그아웃",
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-        }
-        
-        // 로그아웃 확인 다이얼로그
-        if (showLogoutConfirmDialog) {
-            AlertDialog(
-                onDismissRequest = { showLogoutConfirmDialog = false },
-                title = { Text("로그아웃 확인") },
-                text = { Text("현재 러닝 기록은 제거됩니다. 정말 로그아웃하시겠습니까?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                mainViewModel.logout()
-                                showLogoutConfirmDialog = false
-                            }
-                        }
-                    ) {
-                        Text("로그아웃", color = Color.Red)
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showLogoutConfirmDialog = false }
-                    ) {
-                        Text("취소")
+                        scope.launch { mainViewModel.logout() }
                     }
                 }
             )
         }
+        
+        if (showLogoutConfirmDialog) {
+            LogoutConfirmDialog(
+                onConfirm = {
+                    scope.launch {
+                        mainViewModel.logout()
+                        showLogoutConfirmDialog = false
+                    }
+                },
+                onDismiss = { showLogoutConfirmDialog = false }
+            )
+        }
 
-        // --- [D] 최대 기록 인디케이터 (좌측 상단) - 지도 위에 표시 ---
+        // --- [D] 최대 기록 인디케이터 (좌측 상단) ---
         PersonalBestIndicator(
             currentDistanceMeters = totalDistance,
             pbDistanceMeters = personalBest?.distanceMeters
         )
 
         // --- [B] 정보 및 컨트롤 패널 (HUD) ---
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp)
-                .background(Color.White.copy(alpha = 0.9f), shape = RoundedCornerShape(16.dp))
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // 타이머 & 거리 정보
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+        RunControlPanel(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            isRunning = isRunning,
+            durationSeconds = durationSeconds,
+            totalDistance = totalDistance,
+            onStartResume = { viewModel.startRun() },
+            onPause = { viewModel.pauseRun() },
+            onFinish = { viewModel.finishRun() }
+        )
+        
+        // --- [New] 과속 감지 경고 다이얼로그 (최상위) ---
+        if (pauseType == PauseType.AUTO_PAUSE_VEHICLE) {
+            VehicleWarningDialog(
+                onResume = { 
+                    // 경고를 무시하고 다시 달리기
+                    viewModel.startRun() 
+                },
+                onFinishRun = { 
+                    viewModel.finishRun() 
+                }
+            )
+        }
+        
+        // 설정 다이얼로그 표시
+        if (showSettingsDialog) {
+            SettingsDialog(
+                isAutoPauseEnabled = isAutoPauseEnabled,
+                onToggleAutoPause = { mainViewModel.toggleAutoPause() },
+                onDismiss = { showSettingsDialog = false }
+            )
+        }
+    }
+}
+
+// ------------------------------------------------------------------------
+// 분리된 컴포넌트들
+// ------------------------------------------------------------------------
+
+@Composable
+fun VehicleWarningDialog(onResume: () -> Unit, onFinishRun: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = { /* 강제 종료 방지 */ },
+        icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFFA000)) },
+        title = { Text(text = "이동 속도가 너무 빠릅니다") },
+        text = { 
+            Text(
+                text = "차량 탑승이 감지되어 기록을 일시정지했습니다.\n이동 데이터는 저장되지 않았습니다.\n\n계속 뛰시겠습니까?",
+                textAlign = TextAlign.Center
+            ) 
+        },
+        confirmButton = {
+            Button(
+                onClick = onResume,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
             ) {
-                RunStatItem(
-                    label = "TIME",
-                    value = TimeFormatter.formatSecondsToTime(durationSeconds)
-                )
-                RunStatItem(
-                    label = "DISTANCE",
-                    value = String.format("%.2f km", totalDistance / 1000.0)
-                )
+                Text("다시 달리기")
             }
+        },
+        dismissButton = {
+            TextButton(onClick = onFinishRun) {
+                Text("러닝 종료", color = Color.Red)
+            }
+        }
+    )
+}
 
-            Spacer(modifier = Modifier.height(24.dp))
+@Composable
+fun RunControlPanel(
+    modifier: Modifier = Modifier,
+    isRunning: Boolean,
+    durationSeconds: Long,
+    totalDistance: Double,
+    onStartResume: () -> Unit,
+    onPause: () -> Unit,
+    onFinish: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .background(Color.White.copy(alpha = 0.9f), shape = RoundedCornerShape(16.dp))
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 타이머 & 거리 정보
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            RunStatItem(
+                label = "TIME",
+                value = TimeFormatter.formatSecondsToTime(durationSeconds)
+            )
+            RunStatItem(
+                label = "DISTANCE",
+                value = String.format("%.2f km", totalDistance / 1000.0)
+            )
+        }
 
-            // 컨트롤 버튼
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                if (!isRunning) {
-                    // START / RESUME
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 컨트롤 버튼
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            if (!isRunning) {
+                // START / RESUME
+                Button(
+                    onClick = onStartResume,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                ) {
+                    Text(text = if (durationSeconds > 0) "RESUME" else "START")
+                }
+                // FINISH (기록이 있을 때만)
+                if (durationSeconds > 0) {
                     Button(
-                        onClick = { viewModel.startRun() },
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
-                    ) {
-                        Text(text = if (durationSeconds > 0) "RESUME" else "START")
-                    }
-                    // FINISH (기록이 있을 때만)
-                    if (durationSeconds > 0) {
-                        Button(
-                            onClick = { viewModel.finishRun() },
-                            modifier = Modifier.weight(1f).height(56.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                        ) {
-                            Text(text = "FINISH")
-                        }
-                    }
-                } else {
-                    // 러닝 중: PAUSE + FINISH 모두 표시
-                    Button(
-                        onClick = { viewModel.pauseRun() },
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA000))
-                    ) {
-                        Text(text = "PAUSE")
-                    }
-                    Button(
-                        onClick = { viewModel.finishRun() },
+                        onClick = onFinish,
                         modifier = Modifier.weight(1f).height(56.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                     ) {
                         Text(text = "FINISH")
                     }
+                }
+            } else {
+                // 러닝 중: PAUSE + FINISH
+                Button(
+                    onClick = onPause,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA000))
+                ) {
+                    Text(text = "PAUSE")
+                }
+                Button(
+                    onClick = onFinish,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text(text = "FINISH")
                 }
             }
         }
@@ -295,8 +343,146 @@ fun RunStatItem(label: String, value: String) {
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineMedium, // 큰 글씨
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun SettingsButton(onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White.copy(alpha = 0.95f),
+        shadowElevation = 4.dp
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "설정",
+                tint = Color(0xFF6200EE)
+            )
+        }
+    }
+}
+
+@Composable
+fun LogoutButton(modifier: Modifier = Modifier, onLogoutClick: () -> Unit) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White.copy(alpha = 0.95f),
+        shadowElevation = 4.dp
+    ) {
+        OutlinedButton(
+            onClick = onLogoutClick,
+            modifier = Modifier.padding(0.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF6200EE))
+        ) {
+            Text(text = "로그아웃", style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Composable
+fun LogoutConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("로그아웃 확인") },
+        text = { Text("현재 러닝 기록은 제거됩니다. 정말 로그아웃하시겠습니까?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("로그아웃", color = Color.Red)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소")
+            }
+        }
+    )
+}
+
+@Composable
+fun SettingsDialog(
+    isAutoPauseEnabled: Boolean,
+    onToggleAutoPause: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("러닝 설정") },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "자동 일시정지",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "멈추면 기록을 자동으로 중단합니다.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = isAutoPauseEnabled,
+                        onCheckedChange = { onToggleAutoPause() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF6200EE),
+                            checkedTrackColor = Color(0xFF6200EE).copy(alpha = 0.5f)
+                        )
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("닫기")
+            }
+        }
+    )
+}
+
+@Composable
+fun NoApiKeyPlaceholder() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F5))
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "⚠️ Google Maps API Key 필요",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6200EE),
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "지도를 표시하려면 Google Maps API 키가 필요합니다.\n\n" +
+                    "AndroidManifest.xml 파일에서\n" +
+                    "\"YOUR_API_KEY_HERE\"를 실제 API 키로 교체해주세요.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            lineHeight = 24.sp
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "API 키 발급:\nconsole.cloud.google.com/google/maps-apis",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF6200EE),
+            textAlign = TextAlign.Center
         )
     }
 }

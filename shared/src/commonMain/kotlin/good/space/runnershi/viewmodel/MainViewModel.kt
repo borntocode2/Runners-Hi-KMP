@@ -3,6 +3,7 @@ package good.space.runnershi.viewmodel
 import good.space.runnershi.auth.TokenStorage
 import good.space.runnershi.network.ApiClient
 import good.space.runnershi.repository.AuthRepository
+import good.space.runnershi.settings.SettingsRepository
 import good.space.runnershi.state.RunningStateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +21,8 @@ sealed class AppState {
 class MainViewModel(
     private val tokenStorage: TokenStorage,
     private val apiClient: ApiClient,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val settingsRepository: SettingsRepository? = null // [New] 옵셔널로 추가 (iOS 호환성)
 ) {
     // 로그아웃 시 DB 데이터 삭제를 위한 콜백
     var onLogoutCallback: (suspend () -> Unit)? = null
@@ -29,9 +31,35 @@ class MainViewModel(
     private val _appState = MutableStateFlow<AppState>(AppState.Loading)
     val appState: StateFlow<AppState> = _appState.asStateFlow()
 
+    // [New] 오토 퍼즈 설정 상태
+    private val _isAutoPauseEnabled = MutableStateFlow(true)
+    val isAutoPauseEnabled: StateFlow<Boolean> = _isAutoPauseEnabled.asStateFlow()
+
     init {
         checkLoginStatus()
         observeAuthErrors()
+        // 앱 시작 시 저장된 설정 불러오기
+        loadSettings()
+    }
+    
+    // [New] 설정 불러오기
+    private fun loadSettings() {
+        if (settingsRepository != null) {
+            scope.launch {
+                _isAutoPauseEnabled.value = settingsRepository.isAutoPauseEnabled()
+            }
+        }
+    }
+    
+    // [New] 오토 퍼즈 설정 토글
+    fun toggleAutoPause() {
+        if (settingsRepository != null) {
+            scope.launch {
+                val newValue = !_isAutoPauseEnabled.value
+                settingsRepository.setAutoPauseEnabled(newValue)
+                _isAutoPauseEnabled.value = newValue
+            }
+        }
     }
 
     // [초기 실행] 토큰 확인

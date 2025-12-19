@@ -1,6 +1,6 @@
 package good.space.runnershi.state
 
-import good.space.runnershi.model.domain.LocationModel
+import good.space.runnershi.model.domain.location.LocationModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +27,10 @@ object RunningStateManager {
     // 러닝 시작 시간 (휴식시간 포함한 총 시간 계산용)
     private val _startTime = MutableStateFlow<Instant?>(null)
     val startTime: StateFlow<Instant?> = _startTime.asStateFlow()
+
+    // 일시정지 원인 (오토 퍼즈 기능용)
+    private val _pauseType = MutableStateFlow(PauseType.NONE)
+    val pauseType: StateFlow<PauseType> = _pauseType.asStateFlow()
 
     // 상태 업데이트 함수들 (Service에서 호출)
     fun updateLocation(location: LocationModel, distanceDelta: Double) {
@@ -58,6 +62,28 @@ object RunningStateManager {
         _isRunning.value = isRunning
     }
     
+    fun setPauseType(pauseType: PauseType) {
+        _pauseType.value = pauseType
+    }
+    
+    /**
+     * 일시정지 (Atomic Update: isRunning과 pauseType을 동시에 변경)
+     * UI가 한 번에 완벽한 상태로 그려지도록 보장합니다.
+     */
+    fun pause(type: PauseType) {
+        _isRunning.value = false
+        _pauseType.value = type
+    }
+    
+    /**
+     * 재개 (Atomic Update: isRunning과 pauseType을 동시에 변경)
+     * UI가 한 번에 완벽한 상태로 그려지도록 보장합니다.
+     */
+    fun resume() {
+        _isRunning.value = true
+        _pauseType.value = PauseType.NONE
+    }
+    
     fun reset() {
         _currentLocation.value = null
         _totalDistanceMeters.value = 0.0
@@ -65,6 +91,7 @@ object RunningStateManager {
         _durationSeconds.value = 0L
         _isRunning.value = false
         _startTime.value = null
+        _pauseType.value = PauseType.NONE
     }
     
     // 러닝 시작 시간 설정 (첫 START 버튼 클릭 시)

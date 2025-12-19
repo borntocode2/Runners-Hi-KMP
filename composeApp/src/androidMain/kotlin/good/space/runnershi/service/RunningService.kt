@@ -7,12 +7,15 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import good.space.runnershi.MainActivity
 import good.space.runnershi.database.LocalRunningDataSource
 import good.space.runnershi.location.AndroidLocationTracker
-import good.space.runnershi.model.domain.LocationModel
+import good.space.runnershi.model.domain.location.LocationModel
+import good.space.runnershi.model.domain.location.MovementAnalyzer
+import good.space.runnershi.model.domain.location.MovementStatus
+import good.space.runnershi.settings.AndroidSettingsRepository
+import good.space.runnershi.state.PauseType
 import good.space.runnershi.state.RunningStateManager
 import good.space.runnershi.util.DistanceCalculator
 import good.space.runnershi.util.TimeFormatter
@@ -34,16 +37,11 @@ class RunningService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var locationTracker: AndroidLocationTracker
     private lateinit var dbSource: LocalRunningDataSource
+    private lateinit var settingsRepository: AndroidSettingsRepository
     private var lastLocation: LocationModel? = null
 
-    // 의심스러운 좌표들을 잠시 가둬두는 감옥 (버퍼)
-    private val suspiciousBuffer = mutableListOf<LocationModel>()
-
-    // 시간 기반 과속 감지용 변수
-    private var firstOverSpeedTimestamp: Long? = null
-    private val OVER_SPEED_THRESHOLD_MS = 8.33f // 30km/h ≈ 8.33m/s
-    // 5초 (GPS 튐 방지 및 차량 탑승 확정 기준)
-    private val OVER_SPEED_DURATION_MS = 5000L
+    // 이동 상태 분석기
+    private val movementAnalyzer = MovementAnalyzer()
 
     // 액션 상수 정의
     companion object {
@@ -51,7 +49,6 @@ class RunningService : Service() {
         const val ACTION_PAUSE = "ACTION_PAUSE"
         const val ACTION_RESUME = "ACTION_RESUME"
         const val ACTION_STOP = "ACTION_STOP"
-        const val ACTION_OVER_SPEED_DETECTED = "ACTION_OVER_SPEED_DETECTED"
         
         const val CHANNEL_ID = "running_channel"
         const val NOTIFICATION_ID = 1
@@ -63,10 +60,8 @@ class RunningService : Service() {
         super.onCreate()
         locationTracker = AndroidLocationTracker(this)
         dbSource = LocalRunningDataSource(this)
+        settingsRepository = AndroidSettingsRepository(this)
         createNotificationChannel()
-        
-        // ❌ [삭제] 자동 복구 로직 제거
-        // 사용자가 MainActivity에서 다이얼로그를 통해 복구를 선택할 때만 복구됨
     }
 
     // 서비스가 시작될 때 호출됨 (startService 호출 시)
@@ -85,11 +80,10 @@ class RunningService : Service() {
         // 러닝 시작 시간 기록 (휴식시간 포함한 총 시간 계산용)
         RunningStateManager.setStartTime(Clock.System.now())
         RunningStateManager.setRunningState(true)
-        RunningStateManager.addEmptySegment() // 첫 세그먼트
+        RunningStateManager.addEmptySegment()
 
-        // 버퍼 및 과속 타이머 리셋
-        suspiciousBuffer.clear()
-        firstOverSpeedTimestamp = null
+        // 분석기 초기화
+        movementAnalyzer.start(initialStatus = MovementStatus.MOVING)
 
         // 0. DB 세션 시작
         serviceScope.launch {
@@ -107,14 +101,15 @@ class RunningService : Service() {
     }
     
     private fun resumeRunning() {
-        RunningStateManager.setRunningState(true)
+        // Atomic Update: isRunning과 pauseType을 동시에 변경
+        RunningStateManager.resume()
         RunningStateManager.addEmptySegment() // 끊긴 구간 처리
         dbSource.incrementSegmentIndex() // DB 세그먼트 인덱스 증가
         lastLocation = null // 순간이동 방지
         
-        // 버퍼 및 과속 타이머 리셋
-        suspiciousBuffer.clear()
-        firstOverSpeedTimestamp = null
+        // [핵심] 분석기 초기화: "지금부터 달리는 상태로 분석 시작해!"
+        // 이렇게 하면 재개 직후 2초간 굼뜨는 현상을 막을 수 있습니다.
+        movementAnalyzer.start(initialStatus = MovementStatus.MOVING)
         
         // Foreground 알림 다시 시작
         startForeground(NOTIFICATION_ID, buildNotification(
@@ -130,20 +125,10 @@ class RunningService : Service() {
     }
 
     private fun pauseRunning() {
-        RunningStateManager.setRunningState(false)
+        // Atomic Update: 사용자가 수동으로 일시정지
+        RunningStateManager.pause(PauseType.USER_PAUSE)
         // 알림 업데이트 (PAUSED 표시)
         updateNotification("PAUSED", calculateDistanceString())
-    }
-    
-    /**
-     * 과속으로 인한 일시정지 (알림 메시지 포함)
-     */
-    private fun pauseRunningWithOverSpeedNotification() {
-        RunningStateManager.setRunningState(false)
-        
-        // Foreground Service이므로 startForeground를 사용해야 알림이 표시됨
-        val notification = buildOverSpeedNotification()
-        startForeground(NOTIFICATION_ID, notification)
     }
     
     /**
@@ -208,10 +193,106 @@ class RunningService : Service() {
         }
     }
 
+
+    private fun startLocationTracking() {
+        trackingJob?.cancel()
+        trackingJob = locationTracker.startTracking()
+            .onEach { location ->
+                // 1. 분석기에게 판단 위임
+                val analysisResult = movementAnalyzer.analyze(location)
+
+                // 2. 상태 변화가 있을 때만 반응
+                if (analysisResult.isStatusChanged) {
+                    handleStatusChange(analysisResult.status)
+                }
+
+                // 3. '달리는 중'이고 'MOVING' 상태일 때만 거리 계산 및 DB 저장
+                if (RunningStateManager.isRunning.value && 
+                    analysisResult.status == MovementStatus.MOVING) {
+                    processRunningLocation(location)
+                } else {
+                    // PAUSE 상태이거나 MOVING이 아닐 때는 위치만 갱신
+                    lastLocation = location
+                    RunningStateManager.updateLocation(location, 0.0)
+                }
+            }.launchIn(serviceScope)
+    }
+    
     /**
-     * [공통 함수] 유효한 위치 데이터를 처리(거리 계산, State갱신, DB저장)합니다.
+     * 상태 변화 처리 핸들러
      */
-    private fun processValidLocation(location: LocationModel) {
+    private fun handleStatusChange(newStatus: MovementStatus) {
+        when (newStatus) {
+            MovementStatus.VEHICLE -> {
+                // 과속 감지: 자동 일시정지
+                performAutoPause(PauseType.AUTO_PAUSE_VEHICLE)
+            }
+            MovementStatus.STOPPED -> {
+                // 정지 감지: 자동 퍼즈 기능이 활성화되어 있으면 일시정지
+                if (settingsRepository.isAutoPauseEnabledSync()) {
+                    performAutoPause(PauseType.AUTO_PAUSE_REST)
+                }
+            }
+            MovementStatus.MOVING -> {
+                // 이동 감지: 휴식으로 멈춘 게 아니라면 자동 재개
+                val pauseType = RunningStateManager.pauseType.value
+                if (!RunningStateManager.isRunning.value && 
+                    pauseType == PauseType.AUTO_PAUSE_REST) {
+                    performAutoResume()
+                }
+            }
+        }
+    }
+    
+    /**
+     * 자동 일시정지 수행
+     */
+    private fun performAutoPause(pauseType: PauseType) {
+        when (pauseType) {
+            PauseType.AUTO_PAUSE_VEHICLE -> {
+                // 과속 감지: 경고 알림 표시
+                RunningStateManager.pause(pauseType)
+                val notification = buildOverSpeedNotification()
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            PauseType.AUTO_PAUSE_REST -> {
+                // 휴식 감지: 조용히 일시정지
+                RunningStateManager.pause(pauseType)
+                updateNotification("휴식 중", calculateDistanceString())
+            }
+            else -> {
+                // 기타: 일반 일시정지
+                RunningStateManager.pause(pauseType)
+            }
+        }
+    }
+    
+    /**
+     * 자동 재개 수행 (휴식에서 이동으로 전환 시)
+     */
+    private fun performAutoResume() {
+        RunningStateManager.resume()
+        RunningStateManager.addEmptySegment()
+        dbSource.incrementSegmentIndex()
+        lastLocation = null
+        
+        // 분석기 초기화
+        movementAnalyzer.start(initialStatus = MovementStatus.MOVING)
+        
+        // 알림 업데이트
+        updateNotification(
+            TimeFormatter.formatSecondsToTime(RunningStateManager.durationSeconds.value),
+            calculateDistanceString()
+        )
+        
+        // 타이머 재시작
+        startTimer()
+    }
+    
+    /**
+     * 달리는 중일 때 위치 데이터 처리 (거리 계산 및 DB 저장)
+     */
+    private fun processRunningLocation(location: LocationModel) {
         val lastLoc = lastLocation
 
         if (lastLoc != null) {
@@ -239,74 +320,6 @@ class RunningService : Service() {
                 dbSource.saveLocation(location, 0.0, RunningStateManager.durationSeconds.value)
             }
         }
-    }
-
-    private fun startLocationTracking() {
-        trackingJob?.cancel()
-        trackingJob = locationTracker.startTracking()
-            .onEach { newLocation ->
-                val running = RunningStateManager.isRunning.value
-                
-                // 1. PAUSE 상태일 때는 위치만 갱신하고 종료
-                if (!running) {
-                    lastLocation = newLocation
-                    RunningStateManager.updateLocation(newLocation, 0.0)
-                    return@onEach
-                }
-
-                // ----------------------------------------------------
-                // 의심 구간 버퍼링 전략 (Suspicious Buffering)
-                // ----------------------------------------------------
-                
-                // [Case A] 과속 의심 상황 (30km/h 초과)
-                if (newLocation.speed > OVER_SPEED_THRESHOLD_MS) {
-                    // 1. 즉시 저장하지 않고 버퍼에 "감금"
-                    suspiciousBuffer.add(newLocation)
-                    
-                    // 2. 지도 위치는 업데이트 (사용자가 자신의 위치를 볼 수 있도록)
-                    // 단, 거리 계산은 하지 않음 (distanceDelta = 0.0)
-                    RunningStateManager.updateLocation(newLocation, 0.0)
-                    lastLocation = newLocation
-                    
-                    // 3. 시간 측정 시작 (최초 감지 시)
-                    if (firstOverSpeedTimestamp == null) {
-                        firstOverSpeedTimestamp = SystemClock.elapsedRealtime()
-                        android.util.Log.d("RunningService", "⚠️ 과속 의심! 버퍼링 시작")
-                    }
-                    
-                    // 4. 지속 시간 체크
-                    val duration = SystemClock.elapsedRealtime() - firstOverSpeedTimestamp!!
-                    
-                    if (duration >= OVER_SPEED_DURATION_MS) {
-                        // 유죄 확정: 5초 이상 지속됨 -> 진짜 차를 탄 것임
-                        handleVehicleDetected() 
-                    }
-                    
-                    // 버퍼링 중이므로 이번 데이터는 경로에 추가하지 않고 리턴
-                    return@onEach 
-                } 
-                
-                // [Case B] 정상 속도 상황 (30km/h 이하)
-                else {
-                    // 1. 억울하게 갇혀있던 데이터가 있는가? (GPS 튐 현상 종료)
-                    if (suspiciousBuffer.isNotEmpty()) {
-                        android.util.Log.d("RunningService", "✅ GPS 튐 판정: 버퍼 데이터 ${suspiciousBuffer.size}개 복구")
-                        
-                        // 버퍼에 있던 데이터들을 순서대로 저장 (Flush)
-                        suspiciousBuffer.forEach { bufferedLoc ->
-                            processValidLocation(bufferedLoc)
-                        }
-                        suspiciousBuffer.clear()
-                    }
-                    
-                    // 2. 감지 변수 초기화
-                    firstOverSpeedTimestamp = null
-                    
-                    // 3. 현재 위치 정상 저장
-                    processValidLocation(newLocation)
-                }
-                
-            }.launchIn(serviceScope)
     }
 
     private fun stopLocationTracking() {
@@ -351,61 +364,9 @@ class RunningService : Service() {
         notificationManager.notify(NOTIFICATION_ID, buildNotification(time, distance))
     }
     
-    /**
-     * 제목과 내용을 지정하여 알림을 업데이트하는 함수
-     */
-    private fun updateNotificationWithTitle(title: String, content: String) {
-        val openAppIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, openAppIntent, 
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .build()
-            
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, notification)
-    }
-    
     private fun calculateDistanceString(): String {
         val dist = RunningStateManager.totalDistanceMeters.value
         return "%.2f km".format(dist / 1000.0)
-    }
-    
-    /**
-     * 차량 탑승 확정 시 처리 로직
-     * 
-     * 5초 이상 과속 상태가 지속되면 차량 탑승으로 판단하고,
-     * 버퍼에 있던 의심 데이터를 모두 폐기합니다.
-     */
-    private fun handleVehicleDetected() {
-        android.util.Log.w("RunningService", "🚨 차량 탑승 확정! 버퍼 데이터 폐기 및 일시정지")
-        
-        // 버퍼에 있던 5초간의 데이터(약 40~50m)를 모두 폐기처분 (Clear)
-        suspiciousBuffer.clear()
-        firstOverSpeedTimestamp = null
-        
-        // 일시정지 및 알림
-        pauseRunningWithOverSpeedNotification()
-        sendOverSpeedBroadcast()
-    }
-    
-    /**
-     * 과속 감지 이벤트를 Broadcast로 전송
-     */
-    private fun sendOverSpeedBroadcast() {
-        val intent = Intent(ACTION_OVER_SPEED_DETECTED).apply {
-            setPackage(packageName) // 내 앱에게만 보내도록 명시
-        }
-        sendBroadcast(intent)
     }
 
     override fun onDestroy() {

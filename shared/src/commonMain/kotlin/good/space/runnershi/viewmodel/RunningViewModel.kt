@@ -1,9 +1,11 @@
 package good.space.runnershi.viewmodel
 
 import good.space.runnershi.model.domain.RunResult
+import good.space.runnershi.model.domain.location.LocationModel
 import good.space.runnershi.model.dto.running.PersonalBestResponse
 import good.space.runnershi.repository.RunRepository
 import good.space.runnershi.service.ServiceController
+import good.space.runnershi.state.PauseType
 import good.space.runnershi.state.RunningStateManager
 import good.space.runnershi.util.format
 import kotlin.time.DurationUnit
@@ -26,11 +28,12 @@ class RunningViewModel(
     var onFinishCallback: (suspend () -> Unit)? = null
     
     // 데이터는 StateManager에서 직접 구독
-    val currentLocation: StateFlow<good.space.runnershi.model.domain.LocationModel?> = RunningStateManager.currentLocation
+    val currentLocation: StateFlow<LocationModel?> = RunningStateManager.currentLocation
     val totalDistanceMeters: StateFlow<Double> = RunningStateManager.totalDistanceMeters
-    val pathSegments: StateFlow<List<List<good.space.runnershi.model.domain.LocationModel>>> = RunningStateManager.pathSegments
+    val pathSegments: StateFlow<List<List<LocationModel>>> = RunningStateManager.pathSegments
     val durationSeconds: StateFlow<Long> = RunningStateManager.durationSeconds
     val isRunning: StateFlow<Boolean> = RunningStateManager.isRunning
+    val pauseType: StateFlow<PauseType> = RunningStateManager.pauseType
 
     // 결과 화면 표시 여부 및 데이터
     private val _runResult = MutableStateFlow<RunResult?>(null)

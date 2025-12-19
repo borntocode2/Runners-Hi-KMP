@@ -3,7 +3,7 @@ package good.space.runnershi.mapper
 import good.space.runnershi.model.domain.RunResult
 import good.space.runnershi.model.dto.running.LocationPoint
 import good.space.runnershi.model.dto.running.RunCreateRequest
-import good.space.runnershi.util.TimeConverter
+import kotlinx.datetime.Instant
 
 object RunMapper {
     fun mapToCreateRequest(domain: RunResult): RunCreateRequest {
@@ -11,14 +11,14 @@ object RunMapper {
         var globalOrder = 0
 
         // List<List<Location>> -> Flat List<LocationDto> 변환
-        domain.pathSegments.forEachIndexed { sIndex, segment ->
+        domain.pathSegments.forEachIndexed { segmentIndex, segment ->
             segment.forEach { loc ->
                 flatLocations.add(
                     LocationPoint(
                         latitude = loc.latitude,
                         longitude = loc.longitude,
-                        timestamp = TimeConverter.toIso8601(loc.timestamp), // Long -> ISO String 변환
-                        segmentIndex = sIndex, // 세그먼트 인덱스 주입
+                        timestamp = Instant.fromEpochMilliseconds(loc.timestamp),
+                        segmentIndex = segmentIndex,
                         sequenceOrder = globalOrder++
                     )
                 )

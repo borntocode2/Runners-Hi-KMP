@@ -8,7 +8,8 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import good.space.runnershi.model.domain.LocationModel
+import good.space.runnershi.model.domain.location.LocationModel
+import good.space.runnershi.model.domain.location.LocationTracker
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -39,7 +40,8 @@ class AndroidLocationTracker(
                         latitude = location.latitude,
                         longitude = location.longitude,
                         timestamp = location.time,
-                        speed = location.speed // m/s 단위
+                        speed = location.speed, // m/s 단위
+                        accuracy = location.accuracy
                     )
                     // Flow로 방출
                     trySend(model) 

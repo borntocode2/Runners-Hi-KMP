@@ -1,7 +1,7 @@
 package good.space.runnershi.database
 
 import android.content.Context
-import good.space.runnershi.model.domain.LocationModel
+import good.space.runnershi.model.domain.location.LocationModel
 import good.space.runnershi.state.RunningStateManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
