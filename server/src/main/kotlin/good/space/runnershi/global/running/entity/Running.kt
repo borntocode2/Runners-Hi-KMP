@@ -13,20 +13,22 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import kotlinx.datetime.Instant
 import kotlin.time.Duration
+import good.space.runnershi.global.running.converter.KotlinDurationConverter
+import good.space.runnershi.global.running.converter.KotlinInstantConverter
 
 @Entity
 class Running (
-    @Convert(converter = good.space.runnershi.global.running.converter.KotlinDurationConverter::class)
+    @Convert(converter = KotlinDurationConverter::class)
     @Column(nullable = false)
     val duration: Duration, // 실제 러닝 시간 (PAUSE 시간 제외)
     
-    @Convert(converter = good.space.runnershi.global.running.converter.KotlinDurationConverter::class)
+    @Convert(converter = KotlinDurationConverter::class)
     @Column(nullable = false)
     val totalTime: Duration, // 휴식시간을 포함한 총 시간
     
     val distanceMeters: Double,
     
-    @Convert(converter = good.space.runnershi.global.running.converter.KotlinInstantConverter::class)
+    @Convert(converter = KotlinInstantConverter::class)
     @Column(nullable = false)
     val startedAt: Instant, // 러닝 시작 시점
 

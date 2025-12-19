@@ -26,6 +26,8 @@ dependencies {
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.spring.boot.starter.test)
 }
 
 

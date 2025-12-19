@@ -1,16 +1,32 @@
 [versions]
 # --- [스웨거] ---
-springdoc = "2.3.0"
+# Spring Boot 3.x 호환을 위해 버전 업 (2.3.0 -> 2.6.0)
+springdoc = "2.6.0"
+
 # --- [Jwt] ---
-jjwt = "0.11.2"
-# --- [mysql데이터베이스] ---
+jjwt = "0.11.5"
+
+# --- [DB] ---
 mysql = "8.3.0"
-# --- [Build Tools] ---
+
+# --- [Spring Boot] ---
+springBoot = "3.4.1"
+springDependencyManagement = "1.1.7"
+
+# --- [Testing] ---
+# 🚨 중요: JUnit 4와 5 버전을 분리했습니다.
+junit4 = "4.13.2"       # Android/Legacy용
+junit5 = "5.10.1"       # Spring Boot/Kotlin용 (이게 있어야 함!)
+mockito = "5.8.0"
+assertj = "3.24.2"
+
+# --- [Android Build Tools] ---
 agp = "8.12.3"
 android-compileSdk = "35"
 android-minSdk = "24"
 android-targetSdk = "35"
-# --- [AndroidX Stable Versions] ---
+
+# --- [AndroidX] ---
 androidx-activity = "1.9.3"
 androidx-appcompat = "1.7.0"
 androidx-core = "1.15.0"
@@ -18,37 +34,31 @@ androidx-espresso = "3.7.0"
 androidx-lifecycle = "2.8.4"
 androidx-testExt = "1.3.0"
 androidx-security-crypto = "1.1.0-alpha06"
+room = "2.6.1"
+
 # --- [KMP Libraries] ---
 composeMultiplatform = "1.7.1"
-junit = "4.13.2"
 kotlin = "2.0.20"
 ktor = "3.0.2"
-logback = "1.5.21"
-# KMP 표준 라이브러리 스택 (The Holy Trinity)
+logback = "1.5.16"
 koin = "4.0.0"
 koin-annotations = "1.3.1"
 sqldelight = "2.0.2"
 kotlinx-serialization = "1.7.3"
 multiplatform-settings = "1.2.0"
-# iOS 상호운용성
 skie = "0.9.1"
-# 테스트
 mokkery = "2.5.1"
 kotlinx-coroutines-test = "1.9.0"
 kotlinx-coroutines = "1.7.3"
 kotlinx-datetime = "0.6.0"
-# Google Play Services
+ksp = "2.0.20-1.0.25"
+
+# --- [Google Play Services] ---
 play-services-location = "21.0.1"
 maps-compose = "4.3.0"
 google-play-services-maps = "18.2.0"
-# Room Database
-room = "2.6.1"
-# KSP (Kotlin Symbol Processing) - Kotlin 2.0.20에 맞는 버전
-ksp = "2.0.20-1.0.25"
-# Spring Boot
-springBoot = "3.4.1"
-springDependencyManagement = "1.1.7"
-# 네트워킹 (Ktor 클라이언트) - Kotlin 2.0 호환 버전
+
+# --- [Ktor Client] ---
 ktor-client-core = "3.0.2"
 ktor-client-android = "3.0.2"
 ktor-client-ios = "3.0.2"
@@ -57,10 +67,27 @@ ktor-serialization-kotlinx-json = "3.0.2"
 ktor-client-logging = "3.0.2"
 ktor-client-auth = "3.0.2"
 
+
 [libraries]
-# swagger
+# --- [Spring Boot & Server] ---
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springBoot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
+spring-boot-starter-json = { module = "org.springframework.boot:spring-boot-starter-json", version.ref = "springBoot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "springBoot" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springBoot" }
+
+# Swagger
 springdoc-openapi = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
-# Kotlin 표준
+
+# Database
+mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
+
+# JWT
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+
+# Kotlin Standard
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -68,10 +95,16 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
-mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
-spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "springBoot" }
-# AndroidX
-junit = { module = "junit:junit", version.ref = "junit" }
+
+# --- [Unit Testing (Server)] ---
+# 🚨 수정됨: 여기 JUnit5 버전을 참조하도록 변경했습니다.
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit5" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { group = "org.mockito", name = "mockito-junit-jupiter", version.ref = "mockito" }
+assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
+
+# --- [Android Libraries] ---
+junit = { module = "junit:junit", version.ref = "junit4" } # 안드로이드용 Legacy
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-testExt-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-testExt" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-espresso" }
@@ -82,13 +115,18 @@ androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle
 androidx-lifecycle-runtimeKtx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidx-security-crypto" }
 
-# Koin (DI)
+# Room
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+
+# Koin
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
 
-# Ktor (Networking)
+# Ktor Client
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor-client-core" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor-client-android" }
 ktor-client-ios = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor-client-ios" }
@@ -96,44 +134,30 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor-serialization-kotlinx-json" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor-client-logging" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor-client-auth" }
-# Ktor Server (기존)
+
+# Ktor Server (Legacy/KMP side)
 ktor-serverCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
 ktor-serverNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-serverTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
 
-# SQLDelight (Database)
+# SQLDelight
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 
-# Multiplatform Settings (Key-Value Storage)
+# Settings
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatform-settings" }
-
-# Spring Boot
-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springBoot" }
-spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
-spring-boot-starter-json = { module = "org.springframework.boot:spring-boot-starter-json", version.ref = "springBoot" }
 
 # Google Play Services
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "play-services-location" }
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "google-play-services-maps" }
 
-# Room Database
-androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
-androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-
-#JWT
-jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
-jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
-jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
-spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springBoot" }
-
-# 기타
+# Misc
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -152,3 +176,6 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 springBoot = { id = "org.springframework.boot", version.ref = "springBoot" }
 springDependencyManagement = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
 kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+
+[bundles]
+test-basics = ["junit-jupiter", "mockito-core", "mockito-junit-jupiter", "assertj-core"]

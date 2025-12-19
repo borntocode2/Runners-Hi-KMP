@@ -1,12 +1,14 @@
 package good.space.runnershi.global.running.controller
 
 import good.space.runnershi.global.running.service.RunningService
+import good.space.runnershi.model.dto.running.LongestDistance
 import good.space.runnershi.model.dto.running.RunCreateRequest
 import good.space.runnershi.model.dto.running.UpdatedUserResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -26,5 +28,14 @@ class RunningController (
     ): ResponseEntity<UpdatedUserResponse> {
 
         return ResponseEntity.ok(runningService.saveRunningStats(userId, runCreateRequest))
+    }
+
+    @Operation(summary = "가장 긴 거리 조회", description = "사용자의 러닝 화면에서 사용자의 최고기록(거리)를 조회하는 API입니다.")
+    @GetMapping("/LongestDistance")
+    fun getLongestDistance(
+        @AuthenticationPrincipal userId: Long,
+    ): ResponseEntity<LongestDistance> {
+
+        return ResponseEntity.ok(runningService.getLongestDistance(userId))
     }
 }

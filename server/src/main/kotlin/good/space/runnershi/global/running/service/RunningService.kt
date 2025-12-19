@@ -1,7 +1,9 @@
 package good.space.runnershi.global.running.service
 
 import good.space.runnershi.global.running.entity.Running
+import good.space.runnershi.global.running.mapper.toLongestDistanceDto
 import good.space.runnershi.global.running.repository.RunningRepository
+import good.space.runnershi.model.dto.running.LongestDistance
 import good.space.runnershi.model.dto.running.RunCreateRequest
 import good.space.runnershi.model.dto.running.UpdatedUserResponse
 import good.space.runnershi.model.dto.running.newBadgeInfo
@@ -15,6 +17,12 @@ class RunningService (
     private val userRepository: UserRepository,
     private val runningRepository: RunningRepository
 ){
+    fun getLongestDistance(userId: Long): LongestDistance {
+        val user: User = userRepository.findById(userId)
+            .orElseThrow{ IllegalArgumentException("user with id $userId 를 찾을 수 없습니다. in RunningService") }
+
+        return user.toLongestDistanceDto()
+    }
 
     @Transactional
     fun saveRunningStats(userId: Long, runCreateRequest: RunCreateRequest): UpdatedUserResponse {
