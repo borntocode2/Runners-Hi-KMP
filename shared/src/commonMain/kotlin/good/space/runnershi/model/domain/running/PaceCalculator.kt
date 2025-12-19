@@ -1,5 +1,7 @@
 package good.space.runnershi.model.domain.running
 
+import good.space.runnershi.util.format
+
 object PaceCalculator {
 
     /**
@@ -30,13 +32,7 @@ object PaceCalculator {
         val minutes = (paceSecondsPerKm / 60).toInt()
         val seconds = (paceSecondsPerKm % 60).toInt()
 
-        // 6. 포맷팅 (05'30'')
-        // Kotlin Common에서는 String.format을 직접 쓰기 어려울 수 있으므로 문자열 템플릿 사용 권장
-        // 혹은 플랫폼별 format 함수 사용. 여기서는 간단한 로직으로 구현
-        return "${padZero(minutes)}'${padZero(seconds)}''"
-    }
-
-    private fun padZero(number: Int): String {
-        return if (number < 10) "0$number" else "$number"
+        // 6. 포맷팅 (05'30'') - StringFormatter 활용
+        return "%02d'%02d''".format(minutes, seconds)
     }
 }
