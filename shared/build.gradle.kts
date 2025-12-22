@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.mokkery)
+    alias(libs.plugins.jetbrains.compose)
+    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
@@ -26,7 +28,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.koin.core)
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
@@ -36,6 +37,19 @@ kotlin {
                 implementation(libs.multiplatform.settings)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)
+
+                // Compose Multiplatform
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.components.resources)
+                implementation(compose.components.uiToolingPreview) // Preview 공통 지원
+
+                // Koin Multiplatform
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)            // Composable에서 Koin 사용
+                implementation(libs.koin.compose.viewmodel)  // CMP용 ViewModel 지원
             }
         }
         
@@ -53,6 +67,12 @@ kotlin {
                 implementation(libs.sqldelight.android.driver)
                 implementation(libs.ktor.client.android)
                 implementation(libs.play.services.location)
+
+                implementation(libs.androidx.activity.compose) // setContent 사용
+                implementation(libs.androidx.lifecycle.viewmodel.compose) // ViewModel()
+
+                // 안드로이드 스튜디오 미리보기용 (디버그)
+                implementation(compose.uiTooling)
             }
         }
         
