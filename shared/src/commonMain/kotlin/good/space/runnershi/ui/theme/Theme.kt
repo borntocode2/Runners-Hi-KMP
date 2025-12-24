@@ -12,6 +12,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
+    background = White300,
+    onBackground = Gray900,
+
     primary = Blue700,
     onPrimary = White100,
 
@@ -27,6 +30,12 @@ private val LightColorScheme = lightColorScheme(
 )
 
 data class RunnersHiCustomColors(
+    val inputBorder: Color,
+    val inputBorderOnFocused: Color,
+    val inputLabel: Color,
+    val inputDisable: Color,
+    val inputDisableBorder: Color,
+
     val questLight: Color,
     val questDark: Color,
 
@@ -48,6 +57,12 @@ data class RunnersHiCustomColors(
 )
 
 val LightCustomColors = RunnersHiCustomColors(
+    inputBorder = Blue300,
+    inputBorderOnFocused = Blue700,
+    inputLabel = Blue500,
+    inputDisable = Gray300,
+    inputDisableBorder = Gray700,
+
     questLight = SkyBlue50,
     questDark = SkyBlue100,
 

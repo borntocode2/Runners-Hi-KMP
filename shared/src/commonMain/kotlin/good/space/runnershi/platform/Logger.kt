@@ -1,4 +1,4 @@
-package good.space.runnershi.shared.platform
+package good.space.runnershi.platform
 
 interface Logger {
     fun d(tag: String, message: String)

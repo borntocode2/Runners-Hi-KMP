@@ -1,4 +1,9 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import com.codingfeline.buildkonfig.compiler.FieldSpec
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,6 +13,14 @@ plugins {
     alias(libs.plugins.mokkery)
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.buildkonfig)
+}
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 kotlin {
@@ -37,6 +50,7 @@ kotlin {
                 implementation(libs.multiplatform.settings)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)
+                implementation(libs.androidx.navigation.compose)
 
                 // Compose Multiplatform
                 implementation(compose.runtime)
@@ -70,6 +84,7 @@ kotlin {
 
                 implementation(libs.androidx.activity.compose) // setContent 사용
                 implementation(libs.androidx.lifecycle.viewmodel.compose) // ViewModel()
+                implementation(libs.androidx.security.crypto)
 
                 // 안드로이드 스튜디오 미리보기용 (디버그)
                 implementation(compose.uiTooling)
@@ -107,5 +122,24 @@ sqldelight {
         create("AppDatabase") {
             packageName.set("good.space.runnershi.shared.database")
         }
+    }
+}
+
+buildkonfig {
+    packageName = "good.space.runnershi"
+
+    // 모든 타겟 공통 설정
+    defaultConfigs {
+        val serverUrl = localProperties.getProperty("BASE_URL") ?: "http://localhost:8080"
+
+        buildConfigField(FieldSpec.Type.STRING, "BASE_URL", serverUrl)
+    }
+
+    // 안드로이드용 오버라이드
+    defaultConfigs("android") {
+        // 안드로이드는 localhost 대신 10.0.2.2가 필요함
+        val androidUrl = localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:8080"
+
+        buildConfigField(FieldSpec.Type.STRING, "BASE_URL", androidUrl)
     }
 }
