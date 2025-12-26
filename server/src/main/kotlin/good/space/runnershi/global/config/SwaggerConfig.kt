@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import io.swagger.v3.oas.models.servers.Server
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -14,13 +15,9 @@ class SwaggerConfig {
     @Bean
     fun openAPI(): OpenAPI {
         return OpenAPI()
+            .servers(listOf(Server().url("https://runners-hi.site")))
             .addSecurityItem(SecurityRequirement().addList("Bearer Authentication"))
-            .components(
-                Components().addSecuritySchemes(
-                    "Bearer Authentication",
-                    createAPIKeyScheme()
-                )
-            )
+            .components(Components().addSecuritySchemes("Bearer Authentication", createAPIKeyScheme()))
             .info(
                 Info()
                     .title("Runner's High API")
