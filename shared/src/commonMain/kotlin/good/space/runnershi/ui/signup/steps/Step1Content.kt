@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import good.space.runnershi.ui.components.ButtonStyle
 import good.space.runnershi.ui.components.RunnersHiButton
@@ -109,6 +110,7 @@ private fun PasswordInput(
             keyboardType = KeyboardType.Password,
             imeAction = ImeAction.Next
         ),
+        visualTransformation = PasswordVisualTransformation(),
         onValidate = onValidate
     )
 }
@@ -127,7 +129,8 @@ private fun PasswordCheckInput(
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
             imeAction = ImeAction.Next
-        )
+        ),
+        visualTransformation = PasswordVisualTransformation()
     )
 }
 
