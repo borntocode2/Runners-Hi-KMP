@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import good.space.runnershi.ui.components.RunnersHiBackHandler
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.activity.compose.BackHandler
 
 @Composable
 fun SignUpRoute(
@@ -24,7 +24,7 @@ fun SignUpRoute(
         }
     }
 
-    BackHandler(enabled = true) {
+    RunnersHiBackHandler(enabled = true) {
         viewModel.onBackClick()
     }
 
