@@ -1,5 +1,6 @@
 package good.space.runnershi.ui.signup.steps
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,9 +17,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +63,7 @@ fun Step2Content(
 ) {
     var focusMode by remember { mutableStateOf(Step2Focus.Name) }
     val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
 
     val attemptMoveToCharacter = {
         onValidateName()
@@ -70,19 +74,11 @@ fun Step2Content(
         }
     }
 
-    val nameWeight by animateFloatAsState(
-        targetValue = if (focusMode == Step2Focus.Name) 5f else 1.5f,
-        label = "NameWeight"
-    )
-    val charWeight by animateFloatAsState(
-        targetValue = if (focusMode == Step2Focus.Character) 5f else 1.5f,
-        label = "CharWeight"
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp)
+            .verticalScroll(scrollState)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -96,7 +92,6 @@ fun Step2Content(
         Spacer(modifier = Modifier.height(12.dp))
 
         NameSection(
-            weight = nameWeight,
             isActive = focusMode == Step2Focus.Name,
             name = uiState.name,
             nameError = uiState.nameError,
@@ -109,7 +104,6 @@ fun Step2Content(
         Spacer(modifier = Modifier.height(16.dp))
 
         CharacterSection(
-            weight = charWeight,
             isActive = focusMode == Step2Focus.Character,
             selectedSex = uiState.characterSex,
             onSectionClick = attemptMoveToCharacter,
@@ -138,8 +132,7 @@ private fun HeaderSection() {
 }
 
 @Composable
-private fun ColumnScope.NameSection(
-    weight: Float,
+private fun NameSection(
     isActive: Boolean,
     name: String,
     nameError: String?,
@@ -150,8 +143,8 @@ private fun ColumnScope.NameSection(
 ) {
     Box(
         modifier = Modifier
-            .weight(weight)
             .fillMaxWidth()
+            .animateContentSize()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -192,8 +185,7 @@ private fun ColumnScope.NameSection(
 }
 
 @Composable
-private fun ColumnScope.CharacterSection(
-    weight: Float,
+private fun CharacterSection(
     isActive: Boolean,
     selectedSex: Sex?,
     onSectionClick: () -> Unit,
@@ -201,8 +193,8 @@ private fun ColumnScope.CharacterSection(
 ) {
     Box(
         modifier = Modifier
-            .weight(weight)
             .fillMaxWidth()
+            .animateContentSize()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null

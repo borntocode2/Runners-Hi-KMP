@@ -30,7 +30,6 @@ fun SignUpRoute(
 
     SignUpScreen(
         uiState = uiState,
-        onBackClick = viewModel::onBackClick,
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
         onPasswordCheckChange = viewModel::onPasswordCheckChange,
@@ -38,8 +37,9 @@ fun SignUpRoute(
         onCharacterSelect = viewModel::onCharacterSelect,
         onNextClick = viewModel::onNextClick,
         onSignUpClick = viewModel::onSignUpClick,
-        validateEmail = { viewModel.validateEmail() },
-        validatePassword = { viewModel.validatePassword() },
-        validateName = { viewModel.validateName() }
+        validateEmail = viewModel::validateEmail,
+        validatePassword = viewModel::validatePassword,
+        validateName = viewModel::validateName,
+        onErrorShown = viewModel::clearSignUpError
     )
 }

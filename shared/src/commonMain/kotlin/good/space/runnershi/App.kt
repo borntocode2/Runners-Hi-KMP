@@ -42,7 +42,7 @@ fun App() {
                             navController.popBackStack() // 뒤로 가기
                         },
                         navigateToHome = {
-
+                            navController.navigate(Screen.Home.name)
                         }
                     )
                 }

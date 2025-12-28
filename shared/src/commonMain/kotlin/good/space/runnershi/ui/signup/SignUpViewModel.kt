@@ -184,8 +184,17 @@ class SignUpViewModel(
 
     fun validateName() {
         val currentState = _uiState.value
+        val name = currentState.name
+        
+        if (name.isEmpty()) {
+            _uiState.update { it.copy(nameError = "이름이 비어 있습니다.") }
+        }
 
         // TODO: 서버로 이름 중복 확인 요청
+    }
+
+    fun clearSignUpError() {
+        _uiState.update { it.copy(signUpError = null) }
     }
 
     private suspend fun signUp(): Result<LoginResponse> {

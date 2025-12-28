@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -24,15 +26,21 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import good.space.runnershi.model.domain.auth.Sex
 import good.space.runnershi.ui.signup.steps.Step1Content
 import good.space.runnershi.ui.signup.steps.Step2Content
 import good.space.runnershi.ui.theme.RunnersHiTheme
@@ -40,18 +48,30 @@ import good.space.runnershi.ui.theme.RunnersHiTheme
 @Composable
 fun SignUpScreen(
     uiState: SignUpUiState,
-    onBackClick: () -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onPasswordCheckChange: (String) -> Unit,
     onNameChange: (String) -> Unit,
-    onCharacterSelect: (good.space.runnershi.model.domain.auth.Sex) -> Unit,
+    onCharacterSelect: (Sex) -> Unit,
     onNextClick: () -> Unit,
     onSignUpClick: () -> Unit,
     validateEmail: () -> Unit,
     validatePassword: () -> Unit,
-    validateName: () -> Unit
+    validateName: () -> Unit,
+    onErrorShown: () -> Unit
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.signUpError) {
+        uiState.signUpError?.let { errorMessage ->
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                duration = SnackbarDuration.Short
+            )
+            onErrorShown()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,6 +122,13 @@ fun SignUpScreen(
                 }
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.systemBars)
+        )
 
         if (uiState.isLoading) {
             LoadingIndicator()
