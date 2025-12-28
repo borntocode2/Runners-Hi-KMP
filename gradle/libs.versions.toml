@@ -1,7 +1,7 @@
 [versions]
 # --- [스웨거] ---
 # Spring Boot 3.x 호환을 위해 버전 업 (2.3.0 -> 2.6.0)
-springdoc = "2.6.0"
+springdoc = "2.8.14"
 
 # --- [Jwt] ---
 jjwt = "0.11.5"
