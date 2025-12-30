@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import good.space.runnershi.ui.components.ButtonStyle
 import good.space.runnershi.ui.components.RunnersHiButton
 import good.space.runnershi.ui.components.RunnersHiTextField
+import good.space.runnershi.ui.components.SignUpLogo
 import good.space.runnershi.ui.signup.SignUpUiState
 import good.space.runnershi.ui.theme.RunnersHiTheme
 import org.jetbrains.compose.resources.painterResource
@@ -56,7 +57,7 @@ fun Step1Content(
                 indication = null
             ) { focusManager.clearFocus() }
     ) {
-        Logo()
+        SignUpLogo(400.dp)
         Spacer(modifier = Modifier.height(24.dp))
 
         EmailInput(uiState, onEmailChange, validateEmail)
@@ -71,15 +72,6 @@ fun Step1Content(
         NextButton(uiState, onNextClick)
         Spacer(modifier = Modifier.height(50.dp))
     }
-}
-
-@Composable
-private fun Logo() {
-    Image(
-        painter = painterResource(Res.drawable.logo_signup),
-        contentDescription = "Runners Hi Logo",
-        modifier = Modifier.width(400.dp)
-    )
 }
 
 @Composable
