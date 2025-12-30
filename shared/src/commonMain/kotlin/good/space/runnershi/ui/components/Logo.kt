@@ -29,6 +29,7 @@ fun SignUpLogo(
     Image(
         painter = painterResource(Res.drawable.logo_signup),
         contentDescription = "Runners Hi Logo",
-        modifier = Modifier.width(width)
+        modifier = Modifier
+            .width(width)
     )
 }
