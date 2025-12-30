@@ -57,8 +57,9 @@ data class RunnersHiCustomColors(
     val stopLight: Color,
     val stopDark: Color,
 
+    val cardBackground: Color,
     val calory: Color,
-    val cardBackground: Color
+    val personalBestAchieve: Color
 )
 
 val LightCustomColors = RunnersHiCustomColors(
@@ -89,8 +90,9 @@ val LightCustomColors = RunnersHiCustomColors(
     stopLight = Gray600,
     stopDark = Gray800,
 
+    cardBackground = Gray800,
     calory = Red300,
-    cardBackground = Gray800
+    personalBestAchieve = Yellow500
 )
 
 val LocalRunnersHiCustomColors = staticCompositionLocalOf { LightCustomColors
