@@ -14,7 +14,6 @@ import good.space.runnershi.model.dto.user.AvatarInfo
 import good.space.runnershi.state.LevelPolicy
 import good.space.runnershi.user.domain.User
 import good.space.runnershi.user.repository.UserRepository
-import jdk.jfr.Experimental
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -110,13 +109,6 @@ class RunningService (
                 shoes = this.avatar.shoes
             ),
             unlockedAvatars = this.newUnlockedAvatars.toList(),
-            badges = this.achievements.map {
-                BadgeInfo(
-                    title = it.title,
-                    description = it.description,
-                    exp = it.exp,
-                )
-                                           },
             newBadges = this.newAchievements.map {
                 BadgeInfo(
                     title = it.title,

@@ -11,7 +11,6 @@ data class UpdatedUserResponse(
     val level: Int,
     val requiredExpForLevel: Long,
     val totalRunningDays: Long,
-    val badges: List<BadgeInfo>,
     val newBadges: List<BadgeInfo>,
     val avatar: AvatarInfo,
     val unlockedAvatars: List<UnlockedItem>,
