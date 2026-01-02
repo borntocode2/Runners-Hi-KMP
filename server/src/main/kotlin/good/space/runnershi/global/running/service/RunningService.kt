@@ -4,6 +4,7 @@ import good.space.runnershi.global.exception.UserNotFoundException
 import good.space.runnershi.global.running.domain.Running
 import good.space.runnershi.global.running.mapper.toLongestDistanceDto
 import good.space.runnershi.global.running.repository.RunningRepository
+import good.space.runnershi.model.dto.running.BadgeInfo
 import good.space.runnershi.model.dto.running.LongestDistance
 import good.space.runnershi.model.dto.running.RunCreateRequest
 import good.space.runnershi.model.dto.running.RunningHistoryResponse
@@ -107,10 +108,17 @@ class RunningService (
                 shoes = this.avatar.shoes
             ),
             unlockedAvatars = this.newUnlockedAvatars.toList(),
-            badges = this.achievements.map { it.name },
+            badges = this.achievements.map {
+                BadgeInfo(
+                    title = it.title,
+                    description = it.description,
+                    exp = it.exp,
+                )
+                                           },
             newBadges = this.newAchievements.map {
-                newBadgeInfo(
-                    name = it.name,
+                BadgeInfo(
+                    title = it.title,
+                    description = it.description,
                     exp = it.exp
                 )
             },
