@@ -109,13 +109,6 @@ class RunningService (
                 shoes = this.avatar.shoes
             ),
             unlockedAvatars = this.newUnlockedAvatars.toList(),
-            badges = this.achievements.map {
-                BadgeInfo(
-                    title = it.title,
-                    description = it.description,
-                    exp = it.exp,
-                )
-                                           },
             newBadges = this.newAchievements.map {
                 BadgeInfo(
                     title = it.title,

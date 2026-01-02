@@ -1,6 +1,7 @@
 package good.space.runnershi.user.service
 
 import good.space.runnershi.global.exception.UserNotFoundException
+import good.space.runnershi.model.dto.running.BadgeInfo
 import good.space.runnershi.model.dto.user.AvatarInfo
 import good.space.runnershi.model.dto.user.AvatarResponse
 import good.space.runnershi.model.dto.user.AvatarUpdateRequest
@@ -37,7 +38,13 @@ class UserService (
                     isCompleted = status.isCompleted
                 )
             },
-            achievements = user.achievements.map { it.name },
+            achievements = user.achievements.map { achievement ->
+                BadgeInfo(
+                    title = achievement.title,
+                    description = achievement.description,
+                    exp = achievement.exp,
+                )
+            },
             sex = user.sex,
             level = user.level,
             avatars = AvatarInfo(
