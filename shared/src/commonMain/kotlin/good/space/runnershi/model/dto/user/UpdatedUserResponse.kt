@@ -1,8 +1,7 @@
 package good.space.runnershi.model.dto.running
 
 import good.space.runnershi.model.dto.user.AvatarInfo
-import good.space.runnershi.model.dto.user.NewUnlockedAvatarInfo
-import good.space.runnershi.state.LevelPolicy
+import good.space.runnershi.model.dto.user.UnlockedItem
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -15,7 +14,7 @@ data class UpdatedUserResponse(
     val badges: List<BadgeInfo>,
     val newBadges: List<BadgeInfo>,
     val avatar: AvatarInfo,
-    val unlockedAvatars: List<NewUnlockedAvatarInfo>,
+    val unlockedAvatars: List<UnlockedItem>,
     val userExpProgressPercentage: Int,
     val completedQuests: List<dailyQuestInfo>,
     val runningExp: Long

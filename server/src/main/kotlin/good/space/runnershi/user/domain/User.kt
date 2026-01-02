@@ -4,7 +4,7 @@ import good.space.runnershi.global.running.converter.KotlinLocalDateConverter
 import good.space.runnershi.global.running.domain.Running
 import good.space.runnershi.model.domain.auth.Sex
 import good.space.runnershi.model.domain.auth.UserType
-import good.space.runnershi.model.dto.user.NewUnlockedAvatarInfo
+import good.space.runnershi.model.dto.user.UnlockedItem
 import good.space.runnershi.model.type.BottomItem
 import good.space.runnershi.model.type.HeadItem
 import good.space.runnershi.model.type.ShoeItem
@@ -101,7 +101,7 @@ abstract class User(
     var inventory: UserInventory = UserInventory()
 
     @Transient
-    val newUnlockedAvatars: MutableList<NewUnlockedAvatarInfo> = mutableListOf()
+    val newUnlockedAvatars: MutableList<UnlockedItem> = mutableListOf()
 
     @Transient
     val newCompletedQuests: MutableList<Quest> = mutableListOf()
@@ -182,28 +182,28 @@ abstract class User(
     private fun updateAvatars(){
         HeadItem.entries.forEach { item ->
             if (item.requiredLevel ==  this.level && !inventory.hasHead(item)) {
-                newUnlockedAvatars.add(NewUnlockedAvatarInfo("HEAD", item.name))
+                newUnlockedAvatars.add(UnlockedItem.Head(item))
                 inventory.addHead(item)
             }
         }
 
         TopItem.entries.forEach { item ->
             if (item.requiredLevel ==  this.level && !inventory.hasTop(item)) {
-                newUnlockedAvatars.add(NewUnlockedAvatarInfo("TOP", item.name))
+                newUnlockedAvatars.add(UnlockedItem.Top(item))
                 inventory.addTop(item)
             }
         }
 
         BottomItem.entries.forEach { item ->
             if (item.requiredLevel ==  this.level && !inventory.hasBottom(item)) {
-                newUnlockedAvatars.add(NewUnlockedAvatarInfo("BOTTOM", item.name))
+                newUnlockedAvatars.add(UnlockedItem.Bottom(item))
                 inventory.addBottom(item)
             }
         }
 
         ShoeItem.entries.forEach { item ->
             if (item.requiredLevel ==  this.level && !inventory.hasShoe(item)) {
-                newUnlockedAvatars.add(NewUnlockedAvatarInfo("SHOES", item.name))
+                newUnlockedAvatars.add(UnlockedItem.Shoe(item))
                 inventory.addShoe(item)
             }
         }
