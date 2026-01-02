@@ -61,7 +61,7 @@ object LevelPolicy {
     }
 
 
-    private fun getRequiredExpForLevel(level: Int): Long {
+    fun getRequiredExpForLevel(level: Int): Long {
         if (level > MAX_LEVEL) return LEVEL_TABLE.last()
         if (level < 1) return 0
         return LEVEL_TABLE[level - 1]

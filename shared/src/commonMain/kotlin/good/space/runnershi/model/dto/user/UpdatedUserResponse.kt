@@ -2,6 +2,7 @@ package good.space.runnershi.model.dto.running
 
 import good.space.runnershi.model.dto.user.AvatarInfo
 import good.space.runnershi.model.dto.user.NewUnlockedAvatarInfo
+import good.space.runnershi.state.LevelPolicy
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,6 +10,7 @@ data class UpdatedUserResponse(
     val userId: Long,
     val userExp: Long,
     val level: Int,
+    val requiredExpForLevel: Long,
     val totalRunningDays: Long,
     val badges: List<BadgeInfo>,
     val newBadges: List<BadgeInfo>,
