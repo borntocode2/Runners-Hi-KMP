@@ -17,12 +17,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import good.space.runnershi.model.dto.user.QuestResponse
 import good.space.runnershi.ui.components.GradientCircleButton
 import good.space.runnershi.ui.components.GradientCircleButtonColor
@@ -31,6 +34,7 @@ import good.space.runnershi.ui.components.Logo
 import good.space.runnershi.ui.components.QuestCard
 import good.space.runnershi.ui.components.SettingsButtonIcon
 import good.space.runnershi.ui.components.SettingsCircleButton
+import good.space.runnershi.ui.components.SettingsPopup
 import good.space.runnershi.ui.theme.RunnersHiTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -40,8 +44,10 @@ fun HomeScreen(
     navigateToRun: () -> Unit,
     onSettingsClick: () -> Unit,
     onTtlClick: () -> Unit,
-
-    settingsDialog: @Composable () -> Unit,
+    showSettingsPopup: Boolean,
+    onDismissSettingsPopup: () -> Unit,
+    onToggleAutoPause: () -> Unit,
+    onLogout: suspend () -> Unit,
     ttlDialog: @Composable () -> Unit
 ) {
     Column(
@@ -76,12 +82,16 @@ fun HomeScreen(
             ButtonSection(
                 onSettingsClick = onSettingsClick,
                 navigateToRun = navigateToRun,
-                onTtlClick = onTtlClick
+                onTtlClick = onTtlClick,
+                showSettingsPopup = showSettingsPopup,
+                isAutoPauseEnabled = uiState.isAutoPauseEnabled,
+                onDismissSettingsPopup = onDismissSettingsPopup,
+                onToggleAutoPause = onToggleAutoPause,
+                onLogout = onLogout
             )
         }
     }
 
-    settingsDialog()
     ttlDialog()
 }
 
@@ -140,19 +150,41 @@ private fun ColumnScope.QuestSection(
 private fun ButtonSection(
     onSettingsClick: () -> Unit,
     navigateToRun: () -> Unit,
-    onTtlClick: () -> Unit
+    onTtlClick: () -> Unit,
+    showSettingsPopup: Boolean,
+    isAutoPauseEnabled: Boolean,
+    onDismissSettingsPopup: () -> Unit,
+    onToggleAutoPause: () -> Unit,
+    onLogout: suspend () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 왼쪽: 설정 버튼
-        SettingsCircleButton(
-            buttonIcon = SettingsButtonIcon.SETTINGS,
-            onClick = onSettingsClick,
-            size = 56.dp
-        )
+        Box {
+            SettingsCircleButton(
+                buttonIcon = SettingsButtonIcon.SETTINGS,
+                onClick = onSettingsClick,
+                size = 56.dp
+            )
+            if (showSettingsPopup) {
+                SettingsPopup(
+                    isAutoPauseEnabled = isAutoPauseEnabled,
+                    offset = IntOffset(x = 130, y = -130),
+                    onDismissRequest = onDismissSettingsPopup,
+                    onToggleAutoPause = onToggleAutoPause,
+                    onLogout = {
+                        coroutineScope.launch {
+                            onLogout()
+                        }
+                    }
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(24.dp))
 
@@ -190,7 +222,10 @@ private fun HomeScreenPreview() {
             navigateToRun = {},
             onSettingsClick = {},
             onTtlClick = {},
-            settingsDialog = {},
+            showSettingsPopup = true,
+            onDismissSettingsPopup = {},
+            onToggleAutoPause = {},
+            onLogout = {},
             ttlDialog = {}
         )
     }

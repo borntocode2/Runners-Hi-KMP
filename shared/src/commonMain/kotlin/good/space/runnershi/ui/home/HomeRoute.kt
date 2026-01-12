@@ -6,7 +6,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -15,8 +17,9 @@ fun HomeRoute(
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
-    var showSettingsDialog by remember { mutableStateOf(false) }
+    var showSettingsPopup by remember { mutableStateOf(false) }
     var showTtlDialog by remember { mutableStateOf(false) }
 
     // 화면 진입 시 퀘스트 데이터 조회 (한 번만 실행)
@@ -30,11 +33,16 @@ fun HomeRoute(
     HomeScreen(
         uiState = uiState,
         navigateToRun = navigateToRunning,
-        onSettingsClick = { showSettingsDialog = true },
+        onSettingsClick = { showSettingsPopup = true },
         onTtlClick = { showTtlDialog = true },
-        settingsDialog = {
-            if (showSettingsDialog) {
-                /* TODO: 설정 버튼을 클릭했을 때 띄울 다이얼로그 */
+        showSettingsPopup = showSettingsPopup,
+        onDismissSettingsPopup = { showSettingsPopup = false },
+        onToggleAutoPause = {
+            viewModel.toggleAutoPause()
+        },
+        onLogout = {
+            coroutineScope.launch {
+                viewModel.logout()
             }
         },
         ttlDialog = {
