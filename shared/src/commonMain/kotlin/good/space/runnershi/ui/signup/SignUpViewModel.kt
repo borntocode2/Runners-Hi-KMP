@@ -73,32 +73,25 @@ class SignUpViewModel(
     }
 
     fun onPasswordChange(password: String) {
-        _uiState.update {
-            val newState = it.copy(
+        _uiState.update { currentState ->
+            currentState.copy(
                 password = password,
                 passwordError = null
-            )
-
-            newState.copy(
-                passwordVerified = newState.isPasswordReady()
-            )
+            ).reflectPasswordCheckValidation()
         }
     }
 
     fun onPasswordCheckChange(passwordCheck: String) {
         _uiState.update {
-            val newState = it.copy(
+            it.copy(
                 passwordCheck = passwordCheck,
                 passwordCheckError = null
-            )
-
-            val error = newState.passwordCheckErrorMessage
-
-            newState.copy(
-                passwordCheckError = error,
-                passwordVerified = newState.isPasswordReady()
-            )
+            ).reflectPasswordCheckValidation()
         }
+    }
+
+    fun validatePasswordCheck() {
+        _uiState.update { it.reflectPasswordCheckValidation() }
     }
 
     fun onNameChange(name: String) {
@@ -362,6 +355,16 @@ class SignUpViewModel(
                 && passwordCheck == password
     }
 
+    private fun SignUpUiState.reflectPasswordCheckValidation(): SignUpUiState {
+        return if (passwordCheck.isNotEmpty()) {
+            copy(
+                passwordCheckError = passwordCheckErrorMessage,
+                passwordVerified = isPasswordReady()
+            )
+        } else {
+            copy(passwordVerified = isPasswordReady())
+        }
+    }
 
     private fun SignUpUiState.toSignUpRequest(): SignUpRequest {
         return SignUpRequest(

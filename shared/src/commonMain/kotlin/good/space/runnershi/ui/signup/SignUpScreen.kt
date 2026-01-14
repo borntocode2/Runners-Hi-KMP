@@ -47,6 +47,7 @@ fun SignUpScreen(
     onSignUpClick: () -> Unit,
     validateEmail: () -> Unit,
     validatePassword: () -> Unit,
+    validatePasswordCheck: () -> Unit,
     validateName: () -> Unit,
     onErrorShown: () -> Unit
 ) {
@@ -95,7 +96,10 @@ fun SignUpScreen(
                             onEmailChange = onEmailChange,
                             onPasswordChange = onPasswordChange,
                             onPasswordCheckChange = onPasswordCheckChange,
-                            onNextClick = onNextClick,
+                            onNextClick = {
+                                validatePasswordCheck()
+                                onNextClick()
+                            },
                             validateEmail = validateEmail,
                             validatePassword = validatePassword
                         )

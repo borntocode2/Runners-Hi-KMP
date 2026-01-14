@@ -61,7 +61,7 @@ fun Step1Content(
         PasswordInput(uiState, onPasswordChange, validatePassword)
         Spacer(modifier = Modifier.height(24.dp))
 
-        PasswordCheckInput(uiState, onPasswordCheckChange)
+        PasswordCheckInput(uiState, onPasswordCheckChange, onNextClick)
         Spacer(modifier = Modifier.height(24.dp))
 
         NextButton(uiState, onNextClick)
@@ -113,7 +113,8 @@ private fun PasswordInput(
 @Composable
 private fun PasswordCheckInput(
     uiState: SignUpUiState,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    onDone: () -> Unit
 ) {
     RunnersHiTextField(
         title = "Password Check",
@@ -123,8 +124,9 @@ private fun PasswordCheckInput(
         errorMessage = uiState.passwordCheckError,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
-            imeAction = ImeAction.Next
+            imeAction = ImeAction.Done
         ),
+        onDone = onDone,
         visualTransformation = PasswordVisualTransformation()
     )
 }

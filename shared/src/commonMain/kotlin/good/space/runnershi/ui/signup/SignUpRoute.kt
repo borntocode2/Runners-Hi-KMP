@@ -39,6 +39,7 @@ fun SignUpRoute(
         onSignUpClick = viewModel::onSignUpClick,
         validateEmail = viewModel::validateEmail,
         validatePassword = viewModel::validatePassword,
+        validatePasswordCheck = viewModel::validatePasswordCheck,
         validateName = viewModel::validateName,
         onErrorShown = viewModel::clearSignUpError
     )
