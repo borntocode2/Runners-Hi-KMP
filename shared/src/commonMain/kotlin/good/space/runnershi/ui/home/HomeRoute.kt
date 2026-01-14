@@ -14,6 +14,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun HomeRoute(
     navigateToRunning: () -> Unit,
+    navigateToLogin: () -> Unit,
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -43,6 +44,7 @@ fun HomeRoute(
         onLogout = {
             coroutineScope.launch {
                 viewModel.logout()
+                navigateToLogin()
             }
         },
         ttlDialog = {

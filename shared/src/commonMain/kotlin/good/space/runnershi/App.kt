@@ -53,6 +53,11 @@ fun App() {
                 HomeRoute(
                     navigateToRunning = {
                         navController.navigate(Screen.RUNNING.name)
+                    },
+                    navigateToLogin = {
+                        navController.navigate(Screen.Login.name) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }

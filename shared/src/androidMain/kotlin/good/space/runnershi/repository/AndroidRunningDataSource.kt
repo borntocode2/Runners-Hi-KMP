@@ -119,6 +119,18 @@ class AndroidRunningDataSource(
         currentSegmentIndex = 0
     }
 
+    override suspend fun discardAllRuns() = withContext(Dispatchers.IO) {
+        // 버퍼 초기화
+        bufferMutex.withLock {
+            locationBuffer.clear()
+        }
+        
+        // 모든 세션 삭제 (CASCADE로 좌표도 자동 삭제됨)
+        dao.deleteAllSessions()
+        currentRunId = null
+        currentSegmentIndex = 0
+    }
+
     private suspend fun flushBufferLocked() {
         if (locationBuffer.isEmpty()) return
 

@@ -12,4 +12,6 @@ interface LocalRunningDataSource {
     suspend fun finishRun()
 
     suspend fun discardRun()
+    
+    suspend fun discardAllRuns()
 }

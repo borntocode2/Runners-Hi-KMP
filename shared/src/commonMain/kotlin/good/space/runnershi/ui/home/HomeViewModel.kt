@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import good.space.runnershi.auth.TokenStorage
 import good.space.runnershi.model.dto.user.QuestResponse
 import good.space.runnershi.repository.AuthRepository
+import good.space.runnershi.repository.LocalRunningDataSource
 import good.space.runnershi.repository.QuestRepository
 import good.space.runnershi.settings.SettingsRepository
 import good.space.runnershi.state.RunningStateManager
@@ -25,7 +26,8 @@ class HomeViewModel(
     private val questRepository: QuestRepository,
     private val settingsRepository: SettingsRepository?,
     private val authRepository: AuthRepository,
-    private val tokenStorage: TokenStorage
+    private val tokenStorage: TokenStorage,
+    private val runningDataSource: LocalRunningDataSource?
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -90,10 +92,13 @@ class HomeViewModel(
                 println("⚠️ 서버 로그아웃 실패: ${e.message}")
             }
 
-        // 2. 러닝 상태 초기화 (시간, 거리, 경로 등 모든 러닝 정보 리셋)
+        // 2. 로컬 DB의 모든 러닝 데이터 삭제 (로그아웃 시 모든 미완료 데이터 제거)
+        runningDataSource?.discardAllRuns()
+
+        // 3. 러닝 상태 초기화 (시간, 거리, 경로 등 모든 러닝 정보 리셋)
         RunningStateManager.reset()
 
-        // 3. 로컬 토큰 삭제 (AccessToken과 RefreshToken 제거)
+        // 4. 로컬 토큰 삭제 (AccessToken과 RefreshToken 제거)
         tokenStorage.clearTokens()
     }
 }

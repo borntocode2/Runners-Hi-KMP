@@ -25,7 +25,8 @@ val appModule = module {
             questRepository = get(),
             settingsRepository = getOrNull(),
             authRepository = get(),
-            tokenStorage = get()
+            tokenStorage = get(),
+            runningDataSource = getOrNull()
         )
     }
     viewModelOf(::RunningViewModel)
