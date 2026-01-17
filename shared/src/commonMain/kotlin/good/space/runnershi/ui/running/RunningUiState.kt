@@ -14,5 +14,6 @@ data class RunningUiState(
     val isRunning: Boolean = false,
     val personalBest: LongestDistance? = null,
     val pauseType: PauseType = PauseType.NONE,
-    val vehicleWarningCount: Int = 0
+    val vehicleWarningCount: Int = 0,
+    val uploadState: UploadState
 )
