@@ -4,6 +4,6 @@ enum class Screen {
     Login,
     SignUp,
     Home,
-    RUNNING,
-    RESULT
+    Running,
+    Result
 }
