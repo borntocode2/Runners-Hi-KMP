@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import good.space.runnershi.model.domain.location.LocationModel
 import good.space.runnershi.model.dto.running.LongestDistance
@@ -91,11 +94,40 @@ fun RunningScreen(
             onPauseResumeClick = onPauseResumeClick
         )
 
+        if (state.uploadState == UploadState.UPLOADING) {
+            LoadingOverlay()
+        }
+
         if (state.pauseType == PauseType.AUTO_PAUSE_VEHICLE) {
             VehicleWarningDialog(
                 isForcedStop = state.vehicleWarningCount > 1,
                 onResumeClick = onVehicleResumeClick,
                 onFinishClick = onForcedFinishClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoadingOverlay() {
+    // 배경을 터치하지 못하게 Box가 전체를 채우고 clickable을 consume함
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f)) // 반투명 검정 배경
+            .pointerInput(Unit) {}, // 하위 뷰로 클릭 이벤트 전파 방지
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(
+                color = RunnersHiTheme.colorScheme.primary,
+                strokeWidth = 4.dp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "러닝 기록을 저장 중입니다...",
+                style = RunnersHiTheme.typography.bodyMedium,
+                color = Color.White
             )
         }
     }
@@ -119,7 +151,8 @@ private fun RunningScreenActivePreview() {
         currentPace = "6'20''",
         currentCalories = 350,
         isRunning = true,
-        personalBest = dummyPersonalBest
+        personalBest = dummyPersonalBest,
+        uploadState = UploadState.UPLOADING
     )
 
     RunnersHiTheme {
@@ -146,7 +179,8 @@ private fun RunningScreenPausedPreview() {
         currentPace = "-'--''",
         currentCalories = 0,
         isRunning = false,
-        personalBest = dummyPersonalBest
+        personalBest = dummyPersonalBest,
+        uploadState = UploadState.IDLE
     )
 
     RunnersHiTheme {

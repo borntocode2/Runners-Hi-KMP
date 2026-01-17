@@ -22,9 +22,6 @@ fun RunningRoute(
     val focusManager = LocalFocusManager.current
     val permissionManager: LocationPermissionManager = koinInject()
     
-    // 권한 상태 구독
-    val hasPermission by permissionManager.hasPermission.collectAsState()
-    
     // 플랫폼별 권한 요청 처리
     HandleLocationPermission(permissionManager = permissionManager)
 
@@ -39,6 +36,7 @@ fun RunningRoute(
     val personalBest by viewModel.personalBest.collectAsState()
     val pauseType by viewModel.pauseType.collectAsState()
     val vehicleWarningCount by viewModel.vehicleWarningCount.collectAsState()
+    val uploadState by viewModel.uploadState.collectAsState()
 
     // 진입 시 키보드/포커스 정리 및 초기화
     LaunchedEffect(Unit) {
@@ -66,7 +64,8 @@ fun RunningRoute(
         isRunning = isRunning,
         personalBest = personalBest,
         pauseType = pauseType,
-        vehicleWarningCount = vehicleWarningCount
+        vehicleWarningCount = vehicleWarningCount,
+        uploadState = uploadState
     )
 
     // Side Effect 처리
