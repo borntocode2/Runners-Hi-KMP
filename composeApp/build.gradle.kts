@@ -18,7 +18,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_21)
         }
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -28,48 +28,49 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     sourceSets {
         // [변경 2] 현대적인 DSL 문법 적용 (getting 제거)
         androidMain.dependencies {
-                implementation(compose.preview)
-                implementation(libs.androidx.activity.compose)
-                implementation(libs.koin.android)
-                implementation(libs.koin.androidx.compose)
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
             implementation(libs.maps.compose)
             implementation(libs.play.services.maps)
-            
+
             // Room Runtime (Android 전용)
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.room.ktx)
-            
+
             implementation(libs.androidx.lifecycle.runtimeKtx)
             implementation(libs.androidx.security.crypto) // EncryptedSharedPreferences
-            
+            implementation(libs.androidx.core.splashscreen) // SplashScreen API (Android 12+)
+
             // Ktor Client (Android 전용)
             implementation(libs.ktor.client.android)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
         }
-        
+
         commonMain.dependencies {
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(compose.ui)
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
             implementation(compose.materialIconsExtended)
-                implementation(compose.components.resources)
-                implementation(compose.components.uiToolingPreview)
-                implementation(libs.androidx.lifecycle.viewmodel.compose)
-                implementation(libs.androidx.lifecycle.runtimeCompose)
-                implementation(libs.koin.core)
-                implementation(libs.kotlinx.datetime)
-                implementation(projects.shared)
+            implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.koin.core)
+            implementation(libs.kotlinx.datetime)
+            implementation(projects.shared)
         }
-        
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-                implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
@@ -94,13 +95,13 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-        
+
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
-        
+
         // BuildConfig에 BASE_URL 주입
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
-    
+
     buildFeatures {
         buildConfig = true
     }
@@ -123,7 +124,7 @@ android {
 // [변경 3] 최상위 dependencies 블록에서 KSP 설정
 dependencies {
     debugImplementation(compose.uiTooling)
-    
+
     // Room Compiler를 KSP로 설정 (Android 타겟용)
     // "kspAndroid"라고 명시하면 Android 빌드 시에만 동작합니다.
     add("kspAndroid", libs.androidx.room.compiler)

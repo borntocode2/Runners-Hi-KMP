@@ -1,6 +1,8 @@
 package good.space.runnershi
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -12,33 +14,29 @@ import good.space.runnershi.ui.result.ResultRoute
 import good.space.runnershi.ui.running.RunningRoute
 import good.space.runnershi.ui.signup.SignUpRoute
 import good.space.runnershi.ui.splash.SplashRoute
+import good.space.runnershi.ui.splash.SplashViewModel
 import good.space.runnershi.ui.theme.RunnersHiTheme
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun App() {
+fun App(
+    viewModel: SplashViewModel = koinViewModel()
+) {
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+
     RunnersHiTheme {
         val navController = rememberNavController()
 
+        // 로그인 여부가 결정되지 않았다면 스플래시 UI 렌더링
+        if (isLoggedIn == null) {
+            SplashRoute()
+            return@RunnersHiTheme
+        }
+
         NavHost(
             navController = navController,
-            startDestination = Screen.Splash.name
+            startDestination = if (isLoggedIn == true) Screen.Home.name else Screen.Login.name
         ) {
-            // 스플래시 화면
-            composable(route = Screen.Splash.name) {
-                SplashRoute(
-                    onNavigateToLogin = {
-                        navController.navigate(Screen.Login.name) {
-                            popUpTo(Screen.Splash.name) { inclusive = true }
-                        }
-                    },
-                    onNavigateToHome = {
-                        navController.navigate(Screen.Home.name) {
-                            popUpTo(Screen.Splash.name) { inclusive = true }
-                        }
-                    }
-                )
-            }
-
             // 로그인 화면
             composable(route = Screen.Login.name) {
                 LoginRoute(

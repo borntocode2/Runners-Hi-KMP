@@ -4,9 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import good.space.runnershi.auth.TokenStorage
 import good.space.runnershi.repository.AuthRepository
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SplashViewModel(
@@ -14,8 +13,11 @@ class SplashViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _isLoggedIn = Channel<Boolean>()
-    val isLoggedIn = _isLoggedIn.receiveAsFlow()
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading = _isLoading.asStateFlow()
+
+    private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
+    val isLoggedIn = _isLoggedIn.asStateFlow()
 
     init {
         checkLoginStatus()
@@ -23,24 +25,23 @@ class SplashViewModel(
 
     private fun checkLoginStatus() {
         viewModelScope.launch {
-            val refreshToken = tokenStorage.getRefreshToken()
-            if (refreshToken == null) {
-                _isLoggedIn.send(false)
-                return@launch
+            try {
+                val refreshToken = tokenStorage.getRefreshToken()
+                if (refreshToken == null) {
+                    _isLoggedIn.value = false
+                    return@launch
+                }
+
+                val result = authRepository.refreshAccessToken(refreshToken)
+                result.onSuccess {
+                    tokenStorage.saveTokens(it.accessToken, it.refreshToken)
+                    _isLoggedIn.value = true
+                }.onFailure {
+                    _isLoggedIn.value = false
+                }
+            } finally {
+                _isLoading.value = false
             }
-
-            val result = authRepository.refreshAccessToken(refreshToken)
-            // 서버 통신이 너무 빠를 것을 대비한 지연
-            delay(1000)
-
-            result.onSuccess {
-                tokenStorage.saveTokens(
-                    accessToken = it.accessToken,
-                    refreshToken = it.refreshToken
-                )
-            }
-
-            _isLoggedIn.send(result.isSuccess)
         }
     }
 }
