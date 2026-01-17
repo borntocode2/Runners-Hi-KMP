@@ -2,6 +2,8 @@ package good.space.runnershi.repository
 
 import good.space.runnershi.model.dto.auth.LoginRequest
 import good.space.runnershi.model.dto.auth.SignUpRequest
+import good.space.runnershi.model.dto.auth.TokenRefreshRequest
+import good.space.runnershi.model.dto.auth.TokenRefreshResponse
 import good.space.runnershi.model.dto.auth.TokenResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -22,7 +24,7 @@ class AuthRepositoryImpl(
 
     override suspend fun login(request: LoginRequest): Result<TokenResponse> {
         return try {
-            val response = httpClient.post("$baseUrl/api/v1/auth/login") {
+            val response = httpClient.post("$baseUrl/$AUTH_API_PREFIX/login") {
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }
@@ -41,7 +43,7 @@ class AuthRepositoryImpl(
     override suspend fun signUp(request: SignUpRequest): Result<TokenResponse> {
         return try {
             // 1. 회원가입 요청
-            val signUpResponse = httpClient.post("$baseUrl/api/v1/auth/signup") {
+            val signUpResponse = httpClient.post("$baseUrl/$AUTH_API_PREFIX/signup") {
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }
@@ -56,7 +58,7 @@ class AuthRepositoryImpl(
                 password = request.password
             )
             
-            val loginResponse = httpClient.post("$baseUrl/api/v1/auth/login") {
+            val loginResponse = httpClient.post("$baseUrl/$AUTH_API_PREFIX/login") {
                 contentType(ContentType.Application.Json)
                 setBody(loginRequest)
             }
@@ -72,11 +74,29 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun refreshAccessToken(refreshToken: String): Result<TokenRefreshResponse> {
+        return try {
+            val response = httpClient.post("$baseUrl/$AUTH_API_PREFIX/refresh") {
+                contentType(ContentType.Application.Json)
+                setBody(TokenRefreshRequest(refreshToken))
+            }
+
+            if (response.status == HttpStatusCode.OK) {
+                val tokenResponse = response.body<TokenRefreshResponse>()
+                Result.success(tokenResponse)
+            } else {
+                Result.failure(Exception("엑세스 토큰 재발급 실패: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun logout(): Result<Unit> {
         return try {
             // 인증이 필요한 요청이므로 authenticatedHttpClient 사용 (없으면 httpClient 사용)
             val client = authenticatedHttpClient ?: httpClient
-            val response = client.post("$baseUrl/api/v1/auth/logout")
+            val response = client.post("$baseUrl/$AUTH_API_PREFIX/logout")
             
             // 2XX 상태코드면 성공 (200 OK 또는 204 NO CONTENT 등)
             if (response.status.isSuccess()) {
@@ -91,7 +111,7 @@ class AuthRepositoryImpl(
 
     override suspend fun checkEmailAvailability(email: String): Result<Boolean> {
         return try {
-            val response = httpClient.get("$baseUrl/api/v1/auth/check-email") {
+            val response = httpClient.get("$baseUrl/$AUTH_API_PREFIX/check-email") {
                 parameter("email", email)
             }
 
@@ -113,7 +133,7 @@ class AuthRepositoryImpl(
 
     override suspend fun checkNameAvailability(name: String): Result<Boolean> {
         return try {
-            val response = httpClient.get("$baseUrl/api/v1/auth/check-name") {
+            val response = httpClient.get("$baseUrl/$AUTH_API_PREFIX/check-name") {
                 parameter("name", name)
             }
 
@@ -131,6 +151,10 @@ class AuthRepositoryImpl(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    companion object {
+        const val AUTH_API_PREFIX = "api/v1/auth"
     }
 }
 

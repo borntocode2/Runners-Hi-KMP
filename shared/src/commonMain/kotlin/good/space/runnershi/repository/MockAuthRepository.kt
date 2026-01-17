@@ -2,6 +2,7 @@ package good.space.runnershi.repository
 
 import good.space.runnershi.model.dto.auth.LoginRequest
 import good.space.runnershi.model.dto.auth.SignUpRequest
+import good.space.runnershi.model.dto.auth.TokenRefreshResponse
 import good.space.runnershi.model.dto.auth.TokenResponse
 import kotlinx.coroutines.delay
 
@@ -20,6 +21,11 @@ class MockAuthRepository : AuthRepository {
                 refreshToken = "mock_refresh_token_signup"
             )
         )
+    }
+
+    override suspend fun refreshAccessToken(refreshToken: String): Result<TokenRefreshResponse> {
+        delay(1000) // 네트워크 지연 시뮬레이션
+        return Result.success(TokenRefreshResponse("mock_access_token", "mock_refresh_token"))
     }
 
     override suspend fun logout(): Result<Unit> {
