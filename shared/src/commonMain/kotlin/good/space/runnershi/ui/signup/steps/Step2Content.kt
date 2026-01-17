@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,18 +61,28 @@ fun Step2Content(
     onSignUpClick: () -> Unit
 ) {
     var focusMode by remember { mutableStateOf(Step2Focus.Name) }
+    var isWaitingForNext by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
+
+    // 이름 검증이 완료되면 자동으로 포커스 이동
+    LaunchedEffect(uiState.nameVerified) {
+        if (isWaitingForNext && uiState.nameVerified) {
+            focusManager.clearFocus()
+            focusMode = Step2Focus.Character
+            isWaitingForNext = false // 대기 해제
+        }
+    }
 
     val attemptMoveToCharacter = {
         onValidateName()
 
-        if (uiState.name.isNotBlank()
-            && uiState.nameError == null
-            && uiState.nameVerified
-        ) {
+        if (uiState.nameVerified) {
             focusManager.clearFocus()
             focusMode = Step2Focus.Character
+        } else if (uiState.name.isNotBlank()) {
+            // 아직 검증 전이라면 대기
+            isWaitingForNext = true
         }
     }
 
